@@ -104,7 +104,6 @@
 
 <script>
 import ProductBrowse from "./ProductBrowse";
-import DataService from '../../services/DataService'
 import ProductService from "../../services/ProductService";
 
 export default {
@@ -121,7 +120,7 @@ export default {
   methods: {
     async loadBreadCrumbs () {
       try {
-        const response = await DataService.get_index_categories()
+        const response = await ProductService.get_index_categories()
         this.breadcrumbs = response.data
         this.$store.commit('SET_INDEX_CATs', response.data)
         console.log('done')

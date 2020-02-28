@@ -10,10 +10,13 @@ export default {
   get_reviews_by_product_name (product_name) {
     const o = {product_name: product_name}
     console.log(o)
-    return ax.post('/review', o)
+    return ax.post('review', o)
   },
   get_image (url) {
     const o = {url: url}
-    return ax.post('/image', o)
+    return ax.post('image', o)
+  },
+  get_index_categories () {
+    return ax.get('breadcrumbs')
   }
 }

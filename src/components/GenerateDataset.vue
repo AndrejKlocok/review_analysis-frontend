@@ -105,7 +105,7 @@
 </template>
 
 <script>
-import DataService from '../services/DataService'
+import ProductService from "../services/ProductService";
 import GenerateDataService from "../services/GenerateDataService"
 
 export default {
@@ -115,7 +115,6 @@ export default {
     alert: false,
     alert_text: '',
     categories: [],
-    selectionType: 'leaf',
     valid: false,
     select: null,
     task_type_select: null,
@@ -144,7 +143,7 @@ export default {
   methods: {
     async loadBreadCrumbs () {
       try {
-        const response = await DataService.get_index_categories()
+        const response = await ProductService.get_index_categories()
         this.breadcrumbs = response.data
         this.$store.commit('SET_INDEX_CATs', response.data)
         console.log('done')
@@ -192,13 +191,35 @@ export default {
             sentence_max_len: this.max_sentence_len,
             categories: this.categories
         }
-        const response = await GenerateDataService.generate_dataset(config)
-        var fileURL = window.URL.createObjectURL(new Blob([response.data]))
-        var fileLink = document.createElement('a');
-        fileLink.href = fileURL;
-        fileLink.setAttribute('download', 'data.zip');
-        document.body.appendChild(fileLink);
-        fileLink.click();
+        try {
+            const response = await GenerateDataService.generate_dataset(config)
+            var fileURL = window.URL.createObjectURL(new Blob([response.data]))
+            var fileLink = document.createElement('a');
+            fileLink.href = fileURL;
+            fileLink.setAttribute('download', 'data.zip');
+            document.body.appendChild(fileLink);
+            fileLink.click();
+        }
+        catch (error) {
+            if (error.response){
+                // other then 2xx
+                const reader = new FileReader()
+                const text = reader.readAsText(error.response.data)
+                console.log(text)
+                this.alert_text = text
+                this.alert = true
+                console.log(error.response.data)
+                console.log(error.response.status)
+                console.log(error.response.headers)
+            }
+            else if (error.request) {
+                //timeout
+                console.log(error.request);
+            } else {
+                // Something happened in setting up the request and triggered an Error
+                console.log('Error', error.message);
+            }
+        }
       }
   },
   beforeMount () {

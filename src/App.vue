@@ -69,7 +69,8 @@ export default {
         { icon: 'crop_din', title: 'browse_data', path: 'browse_data' },
         { icon: 'crop_din', title: 'product_view', path: 'product_tree_view' },
         { icon: 'crop_din', title: 'generate_dataset', path: 'generate_dataset' },
-        { icon: 'crop_din', title: 'actualize_es', path: 'actualize_es' }
+        { icon: 'crop_din', title: 'actualize_es', path: 'actualize_es' },
+        { icon: 'crop_din', title: 'cluster_reviews', path: 'cluster_reviews' }
 
       ],
       title: 'Review Analysis',

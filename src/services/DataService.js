@@ -8,8 +8,5 @@ export default {
   },
   get_breadcrumbs () {
     return ax.get('breadcrumbs')
-  },
-  get_index_categories () {
-    return ax.get('index_breadcrumbs')
   }
 }
