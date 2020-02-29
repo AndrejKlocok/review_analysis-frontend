@@ -8,8 +8,8 @@ import BrowseData from '../components/BrowseData'
 import ProductView from "../components/product_view/ProductView"
 import ProductTreeView from "../components/product_view/ProductTreeView"
 import ProductReviewView from "../components/product_view/ProductReviewView"
-import ClusterReviews from "../components/ClusterReviews";
-
+import ClusterReviews from "../components/experiments/ClusterReviews";
+import ExperimentsView from "../components/experiments/ExperimentsView";
 
 Vue.use(Router)
 
@@ -56,9 +56,14 @@ export default new Router({
       component: ProductReviewView
     },
     {
-    path: '/cluster_reviews',
+    path: '/experiment/cluster_reviews',
     name: 'cluster_reviews',
     component: ClusterReviews
+    },
+    {
+    path: '/experiment/view',
+    name: 'experiment_view',
+    component: ExperimentsView
     }
   ]
 })
