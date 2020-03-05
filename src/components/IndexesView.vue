@@ -6,6 +6,7 @@
     :sort-desc="[false, true]"
     multi-sort
     :items-per-page="20"
+    :hide-default-footer="true"
     class="elevation-1"
   ></v-data-table>
 </template>

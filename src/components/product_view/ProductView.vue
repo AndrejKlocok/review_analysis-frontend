@@ -75,18 +75,41 @@
 <script>
     import ProductBrowse from "./ProductBrowse"
     import ProductService from "../../services/ProductService"
+    import Experiment_service from "../../services/Experiment_service";
     export default {
         components: {ProductBrowse},
         data () {
             return {
               product: null,
-              image_link: ''
+              image_link: '',
+              experiment: null
             }
           },
         methods: {
             async getProductImage (){
                 const response = await ProductService.get_image(this.product.url)
                 this.image_link = response.data.src
+            },
+            async getExperimentSentences(category){
+
+                this.category = category
+                const config = {
+                    category: category
+                }
+                const response = await Experiment_service.ger_experiment_sentences(config)
+                this.experiment = response.data
+                this.experiment.category = this.product.category
+                var arr_pos = [['Cluster', 'sentences_count']]
+                var arr_con = [['Cluster', 'sentences_count']]
+                this.experiment.pos.clusters.forEach(function (item) {
+                    arr_pos.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
+                })
+                this.experiment.chartData_pos = arr_pos
+
+                this.experiment.con.clusters.forEach(function (item) {
+                    arr_con.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
+                })
+                this.experiment.chartData_con = arr_con
             },
             openHeureka (){
                 window.open(this.product.url, "_blank")
@@ -109,6 +132,8 @@
                 return
             }
             this.getProductImage()
+
+            this.getExperimentSentences(this.product.category)
         }
     }
 </script>

@@ -4,12 +4,12 @@
     <h2>Product tree view</h2>
       <v-card
         class="mx-auto"
+        max-height="900"
         tile>
           <v-card-title class="indigo white--text headline">
           Domain categories
         </v-card-title>
           <v-row
-          class="pa-4"
           justify="space-between"
           >
             <v-col cols="5">
@@ -42,13 +42,14 @@
               :active.sync="active"
               :search="search"
               :filter="filter"
-              class="ml-4"
               :items="breadcrumbs"
               activatable
               item-key="name"
               open-on-click
               transition
               color="warning"
+              class="ml-4 scroll-y"
+              style="overflow-y: auto;max-height: 600px"
             >
                 <template v-slot:prepend="{item}">
                 <v-icon v-if="!item.children">mdi-account</v-icon>
@@ -70,9 +71,10 @@
                 <v-card
                     v-else
                     :key="selected.name"
-                    class="pt-6 mx-auto"
                     flat
                     max-width="400"
+                    class="pt-6 mx-auto scroll-y"
+                    style="overflow-y: auto;max-height: 750px"
                 >
                     <v-card-text>
                         <h2 class="headline mb-2"> Category: {{ selected.name }}</h2>
@@ -99,15 +101,18 @@
         </v-row>
 
       </v-card>
+      <ExperimentClusterView v-bind:experiment="experiment_sentences"/>
   </v-container>
 </template>
 
 <script>
 import ProductBrowse from "./ProductBrowse";
 import ProductService from "../../services/ProductService";
+import Experiment_service from "../../services/Experiment_service";
+import ExperimentClusterView from "../experiments/ExperimentClusterView";
 
 export default {
-    components: {ProductBrowse},
+    components: {ProductBrowse, ExperimentClusterView},
   data: () => ({
     breadcrumbs: [],
     search: null,
@@ -115,7 +120,9 @@ export default {
     active: [],
     products: [],
     product_count: 0,
-    product_review_cnt: 0
+    product_review_cnt: 0,
+    cluster_experiment: null,
+    experiment_sentences: null
   }),
   methods: {
     async loadBreadCrumbs () {
@@ -143,7 +150,27 @@ export default {
       onProductClicked (product){
           this.$store.commit('SET_CLICKED_PRODUCT', product)
           this.$router.push({name: 'product_view', params: {product: product}})
-      }
+      },
+      async getExperimentSentences(category){
+        console.log(category)
+        const config = {
+            category: category
+        }
+        const response = await Experiment_service.ger_experiment_sentences(config)
+        this.experiment_sentences = response.data
+        this.experiment_sentences.category = category
+        var arr_pos = [['Cluster', 'sentences_count']]
+        var arr_con = [['Cluster', 'sentences_count']]
+        this.experiment_sentences.pos.clusters.forEach(function (item) {
+            arr_pos.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
+        })
+        this.experiment_sentences.chartData_pos = arr_pos
+
+        this.experiment_sentences.con.clusters.forEach(function (item) {
+            arr_con.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
+        })
+        this.experiment_sentences.chartData_con = arr_con
+        },
   },
   beforeMount () {
     if (this.$store.state.index_categories[0]) {
@@ -165,6 +192,7 @@ export default {
         if(name == null) return undefined
         var l = name.split(' ')
         this.loadProducts(name)
+        this.getExperimentSentences(name)
         var o = {
             name: l[0]
         }

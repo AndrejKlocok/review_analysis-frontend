@@ -9,7 +9,8 @@ const store = new Vuex.Store({
   state: {
     breadcrumbs: [],
     index_categories : [],
-    clicked_product:{}
+    clicked_product:{},
+    experiments: [],
   },
   mutations: { // Mutations are like setters
     SET_BREADCRUMBS: (state, val) => {
@@ -26,7 +27,13 @@ const store = new Vuex.Store({
     },
     SET_CLICKED_PRODUCT: (state, val) => {
       state.clicked_product = val
-    }
+    },
+    SET_EXPERIMENTS: (state, val) => {
+      state.experiments = val
+    },
+    REM_EXPERIMENTS: (state) => {
+      state.experiments = []
+    },
   }
 })
 export default store

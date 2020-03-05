@@ -92,15 +92,18 @@
       </v-row>
   </v-card>
       <v-dialog
-      v-model="alert"
-      max-width="300"
-    >
-       <v-card>
-         <v-card-text>
-          {{alert_text}}
-         </v-card-text>
-       </v-card>
-   </v-dialog>
+          v-model="alert"
+          max-width="300"
+        >
+           <v-card>
+             <v-card-title class="red white--text headline">
+              API Error - {{alert_code}}
+            </v-card-title>
+             <v-card-text>
+                 <h3>{{alert_text}}</h3>
+             </v-card-text>
+           </v-card>
+        </v-dialog>
   </v-container>
 </template>
 
@@ -114,6 +117,7 @@ export default {
     active: '',
     alert: false,
     alert_text: '',
+    alert_code: 200,
     categories: [],
     valid: false,
     select: null,
@@ -207,6 +211,7 @@ export default {
                 const text = reader.readAsText(error.response.data)
                 console.log(text)
                 this.alert_text = text
+                this.alert_code = error.response.status
                 this.alert = true
                 console.log(error.response.data)
                 console.log(error.response.status)

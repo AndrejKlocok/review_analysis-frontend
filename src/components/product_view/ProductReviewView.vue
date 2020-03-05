@@ -14,11 +14,11 @@
           <template v-slot:item.rating="{ item }">
               <span>{{item.rating}}</span>
           </template>
-      </v-data-table>
+        </v-data-table>
         <v-dialog
-      v-model="dialog"
-      max-width="700"
-    >
+        v-model="dialog"
+        max-width="700"
+        >
       <v-card>
         <v-card-title class="headline">Review for '{{review.product_name}}'</v-card-title>
 
@@ -141,7 +141,6 @@
                 }
             },
             onReviewClicked (review) {
-                console.log(review)
                 this.review = review
                 this.dialog=true
             }
