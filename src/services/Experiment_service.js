@@ -10,13 +10,28 @@ export default {
     return ax.post('cluster_peek', config, {timeout: 600000})
   },
   get_experiments() {
-    return ax.get('/')
+    return ax.get('cluster')
+  },
+  update_cluster_name(config) {
+    return ax.put('cluster', config, {timeout: 60000})
+  },
+  update_topic_name(config) {
+    return ax.put('cluster/topic', config, {timeout: 60000})
   },
   delete_experiment(config) {
-    return ax.delete('/', { data: config })
+    return ax.delete('cluster', { data: config })
   },
-  ger_experiment_sentences (config) {
+  get_experiment_sentences (config) {
     return ax.post('sentences', config, {timeout: 600000})
+  },
+  check_review (config) {
+    return ax.post('review', config)
+  },
+  check_polarity (config) {
+    return ax.post('sentence_pos_con', config)
+  },
+  check_rating (config) {
+    return ax.post('text_rating', config)
   },
 
 }

@@ -14,11 +14,11 @@
         </v-data-table>
         <v-dialog
         v-model="dialog"
-        max-width="600"
+        max-width="1100"
         >
-      <v-card>
-        <v-card-title class="indigo white--text headline">Experiment</v-card-title>
-        <v-simple-table
+          <v-card>
+            <v-card-title class="indigo white--text headline">Experiment</v-card-title>
+            <v-simple-table
                   height=300
                   >
                    <template v-slot:default>
@@ -71,7 +71,7 @@
                     </tbody>
                   </template>
                   </v-simple-table>
-                  <ExperimentClusterView v-bind:experiment="experiment_sentences" />
+                  <ExperimentClusterEditView v-bind:category="category" />
       </v-card>
       </v-dialog>
         <v-dialog
@@ -93,14 +93,14 @@
 <script>
     import ExperimentsBrowse from "./ExperimentsBrowse"
     import Experiment_service from "../../services/Experiment_service";
-    import ExperimentClusterView from "./ExperimentClusterView";
+    import ExperimentClusterEditView from "./ExperimentClusterEditView";
     export default {
-        components: {ExperimentClusterView, ExperimentsBrowse},
+        components: {ExperimentClusterEditView, ExperimentsBrowse},
         name: "ExperimentsView",
         data: () => ({
                 experiments: [],
                 experiment: null,
-                experiment_sentences: null,
+                category: '',
                 dialog: false,
                 alert:false,
                 alert_text: '',
@@ -114,6 +114,10 @@
                     value: 'cluster_method'
                 },
                 {
+                    text: 'Category',
+                    value: 'category'
+                },
+                {
                     text: 'Date',
                     value: 'date',
                 }]
@@ -121,7 +125,7 @@
             methods:{
                 onExperimentClicked (value) {
                         this.experiment = value
-                        this.getExperimentSentences(this.experiment.category)
+                        this.category= this.experiment.category
                         this.dialog = true
                 },
                 async getExperiments () {
@@ -129,26 +133,6 @@
                         this.experiments = response.data
 
                 },
-                async getExperimentSentences(category){
-                    this.category = category
-                    const config = {
-                        category: category
-                    }
-                    const response = await Experiment_service.ger_experiment_sentences(config)
-                    this.experiment_sentences = response.data
-                    this.experiment_sentences.category = this.experiment.category
-                    var arr_pos = [['Cluster', 'sentences_count']]
-                    var arr_con = [['Cluster', 'sentences_count']]
-                    this.experiment_sentences.pos.clusters.forEach(function (item) {
-                        arr_pos.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
-                    })
-                    this.experiment_sentences.chartData_pos = arr_pos
-
-                    this.experiment_sentences.con.clusters.forEach(function (item) {
-                        arr_con.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
-                    })
-                    this.experiment_sentences.chartData_con = arr_con
-                    },
                 async onDeleteExperimentClicked () {
 
                         const req = {
@@ -160,7 +144,6 @@
                             this.experiments = null
                             this.experiments = response.data
                             this.dialog = false
-
                         }
                         catch (error) {
                             if (error.response){

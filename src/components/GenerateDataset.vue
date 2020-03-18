@@ -63,15 +63,13 @@
                     <v-text-field
                       v-model="min_sentence_len"
                       hide-details
-                      single-line
                       type="number"
                       label="Min sentence length"
-                      :rules="[ min_sentence_rules ] "
+                      :rules="[ min_sentence_rules ]"
                     />
                     <v-text-field
                       v-model="max_sentence_len"
                       hide-details
-                      single-line
                       type="number"
                       label="Max sentence length"
                       :rules="[ max_sentence_rules ]"
@@ -191,10 +189,11 @@ export default {
             model_type: this.model_type_select,
             sentence_type: this.sentence_type_select,
             equal: this.equal_checkbox,
-            sentence_min_len: this.min_sentence_len,
-            sentence_max_len: this.max_sentence_len,
+            sentence_min_len: Number(this.min_sentence_len),
+            sentence_max_len: Number(this.max_sentence_len),
             categories: this.categories
         }
+        console.log(config)
         try {
             const response = await GenerateDataService.generate_dataset(config)
             var fileURL = window.URL.createObjectURL(new Blob([response.data]))

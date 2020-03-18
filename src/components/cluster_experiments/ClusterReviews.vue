@@ -26,10 +26,10 @@
                 <v-col>
                     <v-row>
                         <template v-if="!categories.length">
-                          No categories selected.
+                          No category selected.
                         </template>
                         <template v-else>
-                          Selected {{categories.length}} categories
+                          Selected category '{{categories[0]}}'
                         </template>
                     </v-row>
                     <v-row>

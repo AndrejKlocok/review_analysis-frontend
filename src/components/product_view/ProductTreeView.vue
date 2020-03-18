@@ -62,12 +62,12 @@
             >
             <v-scroll-y-transition mode="out-in">
                 <div
-                        v-if="!selected"
-                        class="title grey--text text--lighten-1 font-weight-light"
-                        style="align-self: center;"
-                      >
-                        Select category
-                 </div>
+                    v-if="!selected"
+                    class="title grey--text text--lighten-1 font-weight-light"
+                    style="align-self: center;"
+                  >
+                    Select category
+                </div>
                 <v-card
                     v-else
                     :key="selected.name"
@@ -81,17 +81,23 @@
                         <h2 class="headline mb-2"> Count of products: {{ products.total_products }}</h2>
                         <h2 class="headline mb-2"> Count of reviews: {{ products.total_reviews }}</h2>
                     </v-card-text>
+                    <v-btn
+                        dark
+                        class="cyan"
+                        @click="getExperiment">
+                        Cluster experiment
+                    </v-btn>
                     <v-list subheader>
                       <v-subheader>Products </v-subheader>
 
-                      <v-list-item
+                      <v-list-item two-line
                         v-for="item in products.products"
                         :key="item.product_name"
                         @click="onProductClicked(item)"
                       >
-
                         <v-list-item-content>
                           <v-list-item-title v-text="item.product_name"></v-list-item-title>
+                          <v-list-item-subtitle> reviews: {{item.reviews_len}}</v-list-item-subtitle>
                         </v-list-item-content>
                       </v-list-item>
                     </v-list>
@@ -101,7 +107,27 @@
         </v-row>
 
       </v-card>
-      <ExperimentClusterView v-bind:experiment="experiment_sentences"/>
+    <v-dialog
+      v-model="cluster_dialog"
+      max-width="1200"
+      class="ml-4 scroll-y"
+      style="overflow-y: auto;max-height: 700px"
+    >
+        <ExperimentClusterView v-bind:experiment="experiment"/>
+    </v-dialog>
+    <v-dialog
+          v-model="alert"
+          max-width="300"
+        >
+           <v-card>
+             <v-card-title class="red white--text headline">
+              API Error - {{alert_code}}
+            </v-card-title>
+             <v-card-text>
+                 <h3>{{alert_text}}</h3>
+             </v-card-text>
+           </v-card>
+        </v-dialog>
   </v-container>
 </template>
 
@@ -109,7 +135,7 @@
 import ProductBrowse from "./ProductBrowse";
 import ProductService from "../../services/ProductService";
 import Experiment_service from "../../services/Experiment_service";
-import ExperimentClusterView from "../experiments/ExperimentClusterView";
+import ExperimentClusterView from "../cluster_experiments/ExperimentClusterView";
 
 export default {
     components: {ProductBrowse, ExperimentClusterView},
@@ -119,10 +145,22 @@ export default {
     caseSensitive: false,
     active: [],
     products: [],
+    experiment: {
+        pos:{
+            clusters: []
+        },
+        con:{
+            clusters:[]
+        }
+    },
     product_count: 0,
     product_review_cnt: 0,
     cluster_experiment: null,
-    experiment_sentences: null
+    experiment_sentences: null,
+    cluster_dialog: false,
+    alert:false,
+    alert_text: '',
+    alert_code: 200,
   }),
   methods: {
     async loadBreadCrumbs () {
@@ -151,26 +189,50 @@ export default {
           this.$store.commit('SET_CLICKED_PRODUCT', product)
           this.$router.push({name: 'product_view', params: {product: product}})
       },
+      getExperiment(){
+        this.getExperimentSentences(this.active[0])
+      },
       async getExperimentSentences(category){
-        console.log(category)
+
         const config = {
             category: category
         }
-        const response = await Experiment_service.ger_experiment_sentences(config)
-        this.experiment_sentences = response.data
-        this.experiment_sentences.category = category
-        var arr_pos = [['Cluster', 'sentences_count']]
-        var arr_con = [['Cluster', 'sentences_count']]
-        this.experiment_sentences.pos.clusters.forEach(function (item) {
-            arr_pos.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
-        })
-        this.experiment_sentences.chartData_pos = arr_pos
+        try {
+            this.experiment = {
+                pos:{
+                    clusters: []
+                },
+                con:{
+                    clusters:[]
+                }
+            }
 
-        this.experiment_sentences.con.clusters.forEach(function (item) {
-            arr_con.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
-        })
-        this.experiment_sentences.chartData_con = arr_con
+            const response = await Experiment_service.get_experiment_sentences(config)
+            console.log(response.data)
+            this.experiment = response.data
+            this.experiment.category = this.category
+            this.cluster_dialog = true
+        }
+        catch (error) {
+            if (error.response){
+                // other then 2xx
+                this.alert_text = error.response.data.error
+                this.alert_code = error.response.data.error_code
+                this.alert = true
+                console.log(error.response.data)
+                console.log(error.response.status)
+                console.log(error.response.headers)
+            }
+            else if (error.request) {
+                //timeout
+                console.log(error.request);
+            } else {
+                // Something happened in setting up the request and triggered an Error
+                console.log('Error', error.message);
+            }
+        }
         },
+
   },
   beforeMount () {
     if (this.$store.state.index_categories[0]) {
@@ -192,7 +254,7 @@ export default {
         if(name == null) return undefined
         var l = name.split(' ')
         this.loadProducts(name)
-        this.getExperimentSentences(name)
+
         var o = {
             name: l[0]
         }

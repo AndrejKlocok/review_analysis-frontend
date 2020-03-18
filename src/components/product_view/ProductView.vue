@@ -64,11 +64,12 @@
                   </v-simple-table>
                 </v-col>
               </v-row>
-              <v-row>
-
-              </v-row>
             </v-container>
           </v-card>
+        <v-card>
+
+        </v-card>
+        <ExperimentClusterView v-bind:experiment="experiment" />
     </v-container>
 </template>
 
@@ -76,8 +77,9 @@
     import ProductBrowse from "./ProductBrowse"
     import ProductService from "../../services/ProductService"
     import Experiment_service from "../../services/Experiment_service";
+    import ExperimentClusterView from "../cluster_experiments/ExperimentClusterView";
     export default {
-        components: {ProductBrowse},
+        components: {ExperimentClusterView, ProductBrowse},
         data () {
             return {
               product: null,
@@ -90,26 +92,40 @@
                 const response = await ProductService.get_image(this.product.url)
                 this.image_link = response.data.src
             },
-            async getExperimentSentences(category){
+            async getExperimentSentences(){
 
-                this.category = category
                 const config = {
-                    category: category
+                    category: this.product.product_name
                 }
-                const response = await Experiment_service.ger_experiment_sentences(config)
-                this.experiment = response.data
-                this.experiment.category = this.product.category
-                var arr_pos = [['Cluster', 'sentences_count']]
-                var arr_con = [['Cluster', 'sentences_count']]
-                this.experiment.pos.clusters.forEach(function (item) {
-                    arr_pos.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
-                })
-                this.experiment.chartData_pos = arr_pos
-
-                this.experiment.con.clusters.forEach(function (item) {
-                    arr_con.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
-                })
-                this.experiment.chartData_con = arr_con
+                try {
+                    this.experiment = {
+                        pos:{
+                            clusters: []
+                        },
+                        con:{
+                            clusters:[]
+                        }
+                    }
+                    const response = await Experiment_service.get_experiment_sentences(config)
+                    console.log(response.data)
+                    this.experiment = response.data
+                    this.experiment.category = this.category
+                }
+                catch (error) {
+                    if (error.response){
+                        // other then 2xx
+                        console.log(error.response.data)
+                        console.log(error.response.status)
+                        console.log(error.response.headers)
+                    }
+                    else if (error.request) {
+                        //timeout
+                        console.log(error.request);
+                    } else {
+                        // Something happened in setting up the request and triggered an Error
+                        console.log('Error', error.message);
+                    }
+                }
             },
             openHeureka (){
                 window.open(this.product.url, "_blank")
@@ -132,8 +148,7 @@
                 return
             }
             this.getProductImage()
-
-            this.getExperimentSentences(this.product.category)
+            this.getExperimentSentences()
         }
     }
 </script>

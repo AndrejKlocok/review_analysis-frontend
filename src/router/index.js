@@ -8,8 +8,11 @@ import BrowseData from '../components/BrowseData'
 import ProductView from "../components/product_view/ProductView"
 import ProductTreeView from "../components/product_view/ProductTreeView"
 import ProductReviewView from "../components/product_view/ProductReviewView"
-import ClusterReviews from "../components/experiments/ClusterReviews";
-import ExperimentsView from "../components/experiments/ExperimentsView";
+import ClusterReviews from "../components/cluster_experiments/ClusterReviews";
+import ExperimentsView from "../components/cluster_experiments/ExperimentsView";
+import ModelsDemo from "../components/demo/ModelsDemo";
+import PosConSentenceDemo from "../components/demo/PosConSentenceDemo";
+import TextRatingDemo from "../components/demo/TextRatingDemo";
 
 Vue.use(Router)
 
@@ -56,14 +59,29 @@ export default new Router({
       component: ProductReviewView
     },
     {
-    path: '/experiment/cluster_reviews',
-    name: 'cluster_reviews',
-    component: ClusterReviews
+      path: '/experiment/cluster_reviews',
+      name: 'cluster_reviews',
+      component: ClusterReviews
     },
     {
-    path: '/experiment/view',
-    name: 'experiment_view',
-    component: ExperimentsView
+      path: '/experiment/view',
+      name: 'experiment_view',
+      component: ExperimentsView
+    },
+    {
+      path: '/demo/demo',
+      name: 'demo',
+      component: ModelsDemo
+    },
+    {
+      path: '/demo/pos_con',
+      name: 'demo_pos_con',
+      component: PosConSentenceDemo
+    },
+    {
+      path: '/demo/text_rating',
+      name: 'text_rating',
+      component: TextRatingDemo
     }
   ]
 })
