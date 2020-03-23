@@ -62,14 +62,12 @@
                     ></v-checkbox>
                     <v-text-field
                       v-model="min_sentence_len"
-                      hide-details
                       type="number"
                       label="Min sentence length"
                       :rules="[ min_sentence_rules ]"
                     />
                     <v-text-field
                       v-model="max_sentence_len"
-                      hide-details
                       type="number"
                       label="Max sentence length"
                       :rules="[ max_sentence_rules ]"
@@ -167,19 +165,23 @@ export default {
         else if (value > 1 && value < this.max_sentence_len){
             return true
         }
+        else if (value >= this.max_sentence_len){
+            return "Must be lower than maximum"
+        }
         else {
             return "Invalid value"
         }
       },
       max_sentence_rules (value ){
+        value = Number(value)
         if (value == null) {
             return "Invalid value"
         }
-        else if (value > this.max_sentence_len && value < 50){
+        else if (value > this.min_sentence_len && value < 128){
             return true
         }
         else {
-            return "Invalid value, max: 50"
+            return "Invalid value, max: 128"
         }
       },
       async onGenerateDatasetClicked () {

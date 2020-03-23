@@ -7,7 +7,7 @@
         max-height="900"
         tile>
           <v-card-title class="indigo white--text headline">
-          Domain categories
+          Domain product categories
         </v-card-title>
           <v-row
           justify="space-between"
@@ -96,7 +96,12 @@
                         @click="onProductClicked(item)"
                       >
                         <v-list-item-content>
-                          <v-list-item-title v-text="item.product_name"></v-list-item-title>
+                          <div v-if="item.product_name">
+                              <v-list-item-title v-text="item.product_name"></v-list-item-title>
+                          </div>
+                          <div v-else>
+                              <v-list-item-title v-text="item.name"></v-list-item-title>
+                          </div>
                           <v-list-item-subtitle> reviews: {{item.reviews_len}}</v-list-item-subtitle>
                         </v-list-item-content>
                       </v-list-item>
@@ -178,6 +183,7 @@ export default {
        async loadProducts (category) {
         const response =  await ProductService.get_products(category)
         this.products = response.data
+        console.log(response.data)
 
     },
     async reloadBreadCrumbs () {

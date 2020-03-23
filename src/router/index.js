@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import HelloWorld from '@/components/HelloWorld'
 import IndexesView from '../components/IndexesView'
 import GenerateDataset from '../components/GenerateDataset'
 import ActualizeElastic from '../components/ActualizeElastic'
@@ -13,15 +12,26 @@ import ExperimentsView from "../components/cluster_experiments/ExperimentsView";
 import ModelsDemo from "../components/demo/ModelsDemo";
 import PosConSentenceDemo from "../components/demo/PosConSentenceDemo";
 import TextRatingDemo from "../components/demo/TextRatingDemo";
+import IrrelevantDemo from "../components/demo/IrrelevantDemo";
+import LoginUser from "../components/User/LoginUser";
+import LogoutUser from "../components/User/LogoutUser";
+import NotLoggedHome from "../components/User/NotLoggedHome";
+import UserHome from "../components/User/UserHome";
 
+//import store from "../services/store";
 Vue.use(Router)
 
 export default new Router({
   routes: [
     {
-      path: '/',
-      name: 'main',
-      component: HelloWorld
+      path: '/home',
+      name: 'not_logged_home',
+      component: NotLoggedHome
+    },
+    {
+      path: '/home_user',
+      name: 'user_home',
+      component: UserHome
     },
     {
       path: '/indexes_view',
@@ -46,7 +56,15 @@ export default new Router({
      {
       path: '/product/tree_view',
       name: 'product_tree_view',
-      component: ProductTreeView
+      component: ProductTreeView,
+
+      /* beforeEnter (to, from, next) {
+        if (!store.getters.isAuthenticated) {
+          next('/login')
+        } else {
+          next()
+        }
+      }*/
     },
     {
       path: '/product/product_view',
@@ -82,6 +100,21 @@ export default new Router({
       path: '/demo/text_rating',
       name: 'text_rating',
       component: TextRatingDemo
+    },
+    {
+      path: '/demo/irrelevant',
+      name: 'irrelevant',
+      component: IrrelevantDemo
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginUser
+    },
+    {
+      path: '/logout',
+      name: 'logout',
+      component: LogoutUser
     }
   ]
 })

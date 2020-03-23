@@ -99,33 +99,81 @@
                   </v-row>
                   <v-row>
                       <v-col>
-                              <v-card>
+                          <v-card>
                               <v-card-title>
                                   Positive
                               </v-card-title>
-                                <v-data-table
-                                :headers="headers_pros_con_experiment"
-                                :items="pros_experiment"
-                                class="elevation-1"
-                                :hide-default-footer="true"
-                                >
-                                </v-data-table>
+                               <div
+                                  v-for="(item, i) in pros_experiment"
+                                  :key="i">
+                                    <v-simple-table dense
+                                    >
+                                    <tbody>
+                                        <tr>
+                                            <td width="30">
+                                                <div v-if="item.label === '+'">
+                                                    <v-icon large color="green"
+                                                    @click="onPosConClicked(item)">
+                                                    add_circle
+                                                    </v-icon>
+                                                </div>
+                                                <div v-else>
+                                                    <v-icon large color="red"
+                                                    @click="onPosConClicked(item)">
+                                                        add_circle
+                                                    </v-icon>
+                                                </div>
+
+                                            </td>
+                                            <td>
+                                                <span>
+                                                    {{item.sentence}}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    </v-simple-table>
+                               </div>
                           </v-card>
-                          </v-col>
-                          <v-col>
-                              <v-card>
-                                  <v-card-title>
-                                      Negative
-                                  </v-card-title>
-                                  <v-data-table
-                                    :headers="headers_pros_con_experiment"
-                                    :items="cons_experiment"
-                                    class="elevation-1"
-                                    :hide-default-footer="true"
-                                  >
-                                  </v-data-table>
-                            </v-card>
-                          </v-col>
+                      </v-col>
+                      <v-col>
+                          <v-card>
+                              <v-card-title>
+                                  Negative
+                              </v-card-title>
+                              <div
+                                  v-for="(item, i) in cons_experiment"
+                                  :key="i">
+                                    <v-simple-table dense
+                                    >
+                                    <tbody>
+                                        <tr>
+                                            <td width="30">
+                                                <div v-if="item.label === '-'">
+                                                    <v-icon large color="red"
+                                                    @click="onPosConClicked(item)">
+                                                    remove_circle
+                                                    </v-icon>
+                                                </div>
+                                                <div v-else>
+                                                    <v-icon large color="green"
+                                                    @click="onPosConClicked(item)">
+                                                        remove_circle
+                                                    </v-icon>
+                                                </div>
+
+                                            </td>
+                                            <td>
+                                                <span>
+                                                    {{item.sentence}}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    </v-simple-table>
+                               </div>
+                          </v-card>
+                      </v-col>
                   </v-row>
                 </v-container>
             </v-card>
@@ -184,7 +232,16 @@
         methods:{
             async getProductReviews (){
                 if (this.product){
-                    const response = await ProductService.get_reviews_by_product_name(this.product.product_name)
+                    const config = {
+                        domain: this.product.domain
+                    }
+                    if (this.product.domain ==='shop'){
+                        config.name = this.product.name
+                    }
+                    else {
+                          config.name = this.product.product_name
+                    }
+                    const response = await ProductService.get_reviews_by_product_name(config)
                     const revs = response.data
                     for (var i = 0; i < revs.length; i++) {
                         revs[i].items = {
@@ -234,7 +291,10 @@
                 this.getReviewExperiment(review)
                 this.dialog=true
                 console.log(review)
-            }
+            },
+            onPosConClicked (item){
+              console.log(item)
+            },
         },
         beforeMount() {
             if (this.$route.params.product) {
@@ -256,11 +316,12 @@
 
 <style scoped>
 .pos_sentence {
-    text-decoration: underline;
-    text-decoration-color:green;
+    background-color:#9fed8a;
+    #text-decoration-color:#9fed8a;
 }
 .neg_sentence {
-    text-decoration: underline;
-    text-decoration-color:red;
+    #text-decoration: underline;
+    #text-decoration-color:red;
+    background-color: #f26166;
 }
 </style>

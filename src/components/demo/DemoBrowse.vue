@@ -8,6 +8,7 @@
       <v-tab to='/demo/demo'>Overview</v-tab>
       <v-tab to='/demo/pos_con'>Positive/Negative sentences</v-tab>
       <v-tab to='/demo/text_rating'>Text rating</v-tab>
+      <v-tab to='/demo/irrelevant'>Irrelevant sentences</v-tab>
         <router-view></router-view>
     </v-tabs>
   </v-container>

@@ -19,49 +19,106 @@
                   cols="auto"
                   class="text-center pl-0"
                 >
-
-                  <v-simple-table
-                  height=300
-                  >
-                   <template v-slot:default>
-                    <tbody>
-                      <tr>
-                        <td>Product</td>
-                        <td>{{product.product_name}}</td>
-                      </tr>
-                      <tr>
-                        <td>Review count</td>
-                        <td>{{product.reviews_len}}</td>
-                      </tr>
-                    <tr>
-                        <td>Category</td>
-                        <td>{{product.category}}</td>
-                      </tr>
-                    <tr>
-                        <td>Heureka</td>
-                        <td>
-                            <v-icon
-                                large
-                                @click="openHeureka()"
-                              >
-                                link
-                              </v-icon>
-                        </td>
-                      </tr>
-                    <tr>
-                        <td></td>
-                        <td>
-                            <v-btn rounded color="primary"
-                         dark
-                         @click="onSeeReviewsBtnClicked()"
+                  <div v-if="product.domain === 'shop'">
+                    <v-simple-table
+                          height=300
                           >
-                              See reviews
-                          </v-btn>
-                        </td>
-                    </tr>
-                    </tbody>
-                  </template>
-                  </v-simple-table>
+                           <template v-slot:default>
+                            <tbody>
+                              <tr>
+                                <td>Shop</td>
+                                <td>{{product.name}}</td>
+                              </tr>
+                              <tr>
+                                <td>Review count</td>
+                                <td>{{product.reviews_len}}</td>
+                              </tr>
+                            <tr>
+                                <td>Info</td>
+                                <td>{{product.info}}</td>
+                              </tr>
+                            <tr>
+                                <td>Heureka</td>
+                                <td>
+                                    <v-icon
+                                        large
+                                        @click="openHeureka()"
+                                      >
+                                        link
+                                      </v-icon>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Shop page</td>
+                                <td>
+                                    <v-icon
+                                        large
+                                        @click="openShopPage()"
+                                      >
+                                        link
+                                      </v-icon>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td>
+                                    <v-btn rounded color="primary"
+                                 dark
+                                 @click="onSeeReviewsBtnClicked()"
+                                  >
+                                      See reviews
+                                  </v-btn>
+                                </td>
+                            </tr>
+                            </tbody>
+                          </template>
+                      </v-simple-table>
+                  </div>
+                  <div v-else>
+                      <v-simple-table
+                          height=300
+                          >
+                           <template v-slot:default>
+                            <tbody>
+                              <tr>
+                                <td>Product</td>
+                                <td>{{product.product_name}}</td>
+                              </tr>
+                              <tr>
+                                <td>Review count</td>
+                                <td>{{product.reviews_len}}</td>
+                              </tr>
+                            <tr>
+                                <td>Category</td>
+                                <td>{{product.category}}</td>
+                              </tr>
+                            <tr>
+                                <td>Heureka</td>
+                                <td>
+                                    <v-icon
+                                        large
+                                        @click="openHeureka()"
+                                      >
+                                        link
+                                      </v-icon>
+                                </td>
+                              </tr>
+                            <tr>
+                                <td></td>
+                                <td>
+                                    <v-btn rounded color="primary"
+                                 dark
+                                 @click="onSeeReviewsBtnClicked()"
+                                  >
+                                      See reviews
+                                  </v-btn>
+                                </td>
+                            </tr>
+                            </tbody>
+                          </template>
+                      </v-simple-table>
+                  </div>
+
                 </v-col>
               </v-row>
             </v-container>
@@ -89,14 +146,27 @@
           },
         methods: {
             async getProductImage (){
-                const response = await ProductService.get_image(this.product.url)
+                if (this.product.domain ==='shop'){
+                    return
+                }
+                const config = {
+                        url: this.product.url
+                    }
+
+                const response = await ProductService.get_image(config)
                 this.image_link = response.data.src
             },
             async getExperimentSentences(){
+                const config = {}
 
-                const config = {
-                    category: this.product.product_name
+                // shop case
+                if (this.product.domain ==='shop'){
+                    config.category = this.product.name
                 }
+                else{
+                    config.category = this.product.product_name
+                }
+
                 try {
                     this.experiment = {
                         pos:{
@@ -128,7 +198,15 @@
                 }
             },
             openHeureka (){
-                window.open(this.product.url, "_blank")
+                if(this.product.domain === 'shop'){
+                    window.open(this.product.url_review, "_blank")
+                }
+                else{
+                    window.open(this.product.url, "_blank")
+                }
+            },
+            openShopPage (){
+                window.open(this.product.url_shop, "_blank")
             },
             onSeeReviewsBtnClicked() {
                 this.$router.push({name: 'review_view', params: {product: this.product}})

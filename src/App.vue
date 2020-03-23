@@ -13,7 +13,7 @@
             Review Analysis
           </v-list-item-title>
           <v-list-item-subtitle>
-            menu
+            [{{user_id}} &nbsp; &nbsp;]
           </v-list-item-subtitle>
         </v-list-item-content>
       </v-list-item>
@@ -44,7 +44,6 @@
     <v-content>
       <router-view/>
     </v-content>
-
     <v-footer app>
       <v-layout>
         <span>
@@ -56,46 +55,74 @@
 </template>
 
 <script>
-// import store from '@/services/store'
-// import EventBus from '@/services/events'
-import DataService from '@/services/DataService'
+import EventBus from '@/services/events'
 export default {
   data () {
     return {
       drawer: false,
       items: [],
-      itemsUser: [{ icon: 'crop_din', title: 'Home', path: 'main' },
+      items_not_logged:[
+        { icon: 'crop_din', title: 'Home', path: 'not_logged_home' },
+        { icon: 'crop_din', title: 'Login', path: 'login' },
+      ],
+      items_user: [
+        { icon: 'crop_din', title: 'Home', path: 'user_home' },
+        { icon: 'crop_din', title: 'product_view', path: 'product_tree_view' },
+        { icon: 'crop_din', title: 'demo', path: 'demo' },
+        { icon: 'crop_din', title: 'logout', path: 'logout' },
+      ],
+      items_analyst:[
+        { icon: 'crop_din', title: 'Home', path: 'user_home' },
         { icon: 'crop_din', title: 'indexes_view', path: 'indexes_view' },
         { icon: 'crop_din', title: 'browse_data', path: 'browse_data' },
         { icon: 'crop_din', title: 'product_view', path: 'product_tree_view' },
         { icon: 'crop_din', title: 'generate_dataset', path: 'generate_dataset' },
         { icon: 'crop_din', title: 'actualize_es', path: 'actualize_es' },
         { icon: 'crop_din', title: 'cluster_reviews', path: 'cluster_reviews' },
-        { icon: 'crop_din', title: 'demo', path: 'demo' }
+        { icon: 'crop_din', title: 'demo', path: 'demo' },
+        { icon: 'crop_din', title: 'logout', path: 'logout' },
+
+      ],
+      items_administrator:[
+
       ],
       title: 'Review Analysis',
-      indexes_table: {}
+      indexes_table: {},
+      user_id: 'user: not logged'
     }
   },
   methods: {
+    userLogged(user){
+      console.log('Using user')
+      console.log(user)
+      if (user.level === 'user'){
+        this.items = this.items_user
+        this.user_id = 'user: ' + user.name
+      }
+      else if (user.level === 'analyst'){
+        this.items = this.items_analyst
+        this.user_id = 'user: ' + user.name
+      }
+    },
     drawerClick (path) {
       // eslint-disable-next-line no-unused-vars
       this.$router.push({name: path}).catch(err => {})
     },
-    async loadIndexesHealth () {
-      try {
-        const response = await DataService.get_indexes_health()
-        console.log(response.data)
-        this.data = response.data
-      } catch (error) {
-        if (error.response) {
-          console.log(error.response)
-        }
-      }
+    loggedOut(){
+      this.user_id = 'user: not logged'
+      this.items = this.items_not_logged
     }
   },
   beforeMount () {
-    this.items = this.itemsUser
+    var user = this.$store.state.user
+    if (user) {
+      this.userLogged(user)
+    }
+    else {
+      this.items = this.items_not_logged
+    }
+    EventBus.$on('USER_LOGGED', this.userLogged)
+    EventBus.$on('USER_LOGGED_OUT', this.loggedOut)
   }
 }
 </script>

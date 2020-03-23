@@ -27,6 +27,11 @@
                                         >
                                     edit
                                   </v-icon>
+                                  <v-icon
+                                        @click="onClusterMerge(item)"
+                                        >
+                                    merge_type
+                                  </v-icon>
                               </template>
                               <template v-slot:item.topics="{ item }" >
                                   <template v-for="(topic, index) in item.topics">
@@ -75,6 +80,11 @@
                                         @click="onClusterEdit(item)"
                                         >
                                     edit
+                                  </v-icon>
+                                  <v-icon
+                                        @click="onClusterMerge(item)"
+                                        >
+                                    merge_type
                                   </v-icon>
                               </template>
                               <template v-slot:item.topics="{ item }" >
@@ -191,6 +201,47 @@
                 </v-form>
             </v-card>
         </v-dialog>
+
+        <v-dialog
+          v-model="cluster_merge_dialog"
+          class="ml-4"
+          max-width="300"
+        >
+            <v-card>
+                <v-card-title class="blue white--text headline">
+                    <div>
+                        Merge cluster {{cluster_edit_data.cluster_name}}
+                    </div>
+                </v-card-title>
+                <v-form
+                    ref="form"
+                    v-model="cluster_edit_valid"
+                    lazy-validation
+                    >
+                    <v-select
+                      v-model="merge_cluster_selected"
+                      :items="merge_cluster_items"
+                      :rules="[ clusters_merge_rules ]"
+                      label="Select cluster"
+                      required
+                    >
+                      <template v-slot:selection="{ item }" >
+                        {{item.cluster_name}}
+                      </template>
+                        <template v-slot:item="{ item }" >
+                            {{item.cluster_name}}
+                        </template>
+                    </v-select>
+                    <v-btn
+                        dark
+                        class="cyan"
+                        :disabled="!cluster_edit_valid"
+                        @click="onClusterMergeClicked">
+                        Merge
+                      </v-btn>
+                </v-form>
+            </v-card>
+        </v-dialog>
         <v-dialog
           v-model="alert"
           max-width="300"
@@ -253,6 +304,9 @@
             alert:false,
             alert_text: '',
             alert_code: 200,
+            cluster_merge_dialog: false,
+            merge_cluster_selected: {},
+            merge_cluster_items: []
         }),
         methods: {
             onTopicClicked (value, index) {
@@ -346,7 +400,72 @@
 
                 this.cluster_topic_edit_valid = false
             },
+            onClusterMerge(cluster) {
+                this.cluster_edit_data = cluster
+                this.merge_cluster_items = []
+                if (cluster['type'] === "pos") {
+                    this.merge_cluster_items = this.experiment.pos.clusters
+                }
+                else {
+                    this.merge_cluster_items = this.experiment.con.clusters
+                }
+                this.cluster_merge_dialog = true
+            },
+            async onClusterMergeClicked () {
+                const config = {
+                    cluster_from: {
+                        _id: this.cluster_edit_data['_id'],
+                        cluster_sentences_count: this.cluster_edit_data['cluster_sentences_count'],
+                        topics: this.cluster_edit_data['topics'],
+                        cluster_name: this.cluster_edit_data['cluster_name'],
+                        type: this.cluster_edit_data['type'],
+                        experiment_id: this.cluster_edit_data['experiment_id'],
+                    },
+                    cluster_to: {
+                        _id: this.merge_cluster_selected['_id'],
+                        cluster_sentences_count: this.merge_cluster_selected['cluster_sentences_count'],
+                        topics: this.merge_cluster_selected['topics'],
+                        cluster_name: this.merge_cluster_selected['cluster_name'],
+                        type: this.merge_cluster_selected['type'],
+                        experiment_id: this.cluster_edit_data['experiment_id'],
+                    }
+                }
 
+                try {
+                    console.log(config)
+                    await Experiment_service.cluster_merge(config)
+                    this.getExperimentSentences()
+                }
+                catch (error) {
+                    if (error.response){
+                        // other then 2xx
+                        this.alert_text = error.response.data.error
+                        this.alert_code = error.response.data.error_code
+                        this.alert = true
+                        console.log(error.response.data)
+                        console.log(error.response.status)
+                        console.log(error.response.headers)
+                    }
+                    else if (error.request) {
+                        //timeout
+                        console.log(error.request);
+                    } else {
+                        // Something happened in setting up the request and triggered an Error
+                        console.log('Error', error.message);
+                    }
+                }
+            },
+            clusters_merge_rules(item) {
+                if (item == null) {
+                    return "Invalid value"
+                }
+                else if (item.cluster_name === this.cluster_edit_data.cluster_name){
+                    return "The same cluster"
+                }
+                else {
+                    return true
+                }
+            },
             async getExperimentSentences(){
                 console.log(this.category)
                 const config = {

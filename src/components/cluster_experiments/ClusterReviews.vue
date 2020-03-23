@@ -9,103 +9,99 @@
             tile>
                 <v-row>
                     <v-col>
-                      <v-treeview
-                        v-model="categories"
-                        dense
-                        :items="breadcrumbs"
-                        activatable
-                        item-key="name"
-                        open-on-click
-                        selectable
-                        class="ml-4 scroll-y"
-                        style="overflow-y: auto;max-height: 700px"
-                      >
+                        <v-sheet class="pa-4 primary lighten-2">
+                            <v-text-field
+                            v-model="search"
+                            label="Search Category"
+                            dark
+                            flat
+                            solo-inverted
+                            hide-details
+                            clearable
+                            clear-icon="mdi-close-circle-outline"
+                          ></v-text-field>
+                          <v-checkbox
+                            v-model="caseSensitive"
+                            dark
+                            hide-details
+                            label="Case sensitive search"
+                          ></v-checkbox>
+                        </v-sheet>
+                          <v-treeview
+                          dense
+                          :active.sync="active"
+                          :search="search"
+                          :filter="filter"
+                          :items="breadcrumbs"
+                          activatable
+                          item-key="name"
+                          open-on-click
+                          transition
+                          color="warning"
+                          class="ml-4 scroll-y"
+                          style="overflow-y: auto;max-height: 600px"
+                        >
+                        <template v-slot:prepend="{item}">
+                        <v-icon v-if="!item.children">mdi-account</v-icon>
+                      </template>
                   </v-treeview>
                 </v-col>
                 <v-divider vertical></v-divider>
-                <v-col>
-                    <v-row>
-                        <template v-if="!categories.length">
-                          No category selected.
-                        </template>
-                        <template v-else>
-                          Selected category '{{categories[0]}}'
-                        </template>
-                    </v-row>
-                    <v-row>
-                        <v-form
-                        ref="form"
-                        v-model="valid"
-                        lazy-validation
-                        >
-                          <v-select
-                          v-model="embedding_type_select"
-                          :items="embedding_type_items"
-                          :rules="[v => !!v || 'Item is required']"
-                          label="Embedding method"
-                          required
-                        ></v-select>
-                        <v-select
-                          v-model="cluster_method_select"
-                          :items="cluster_method_items"
-                          :rules="[v => !!v || 'Item is required']"
-                          label="Cluster method"
-                          required
-                        ></v-select>
-                        <v-row>
-                            <v-col>
-                                <v-text-field
-                                  v-model="clusters_pos_count_select"
-                                  type="number"
-                                  label="Count of positive clusters"
-                                  :rules="[ clusters_count_rules ]"
-                                />
-                            </v-col>
-                            <v-col>
-                                <v-text-field
-                                  v-model="clusters_con_count_select"
-                                  type="number"
-                                  label="Count of negative clusters"
-                                  :rules="[ clusters_count_rules ]"
-                                />
-                            </v-col>
-                        </v-row>
+                <v-divider vertical></v-divider>
+        <v-col
+            class="d-flex text-center"
+            >
+            <v-scroll-y-transition mode="out-in">
+                <div
+                    v-if="!selected"
+                    class="title grey--text text--lighten-1 font-weight-light"
+                    style="align-self: center;"
+                  >
+                    Select category
+                </div>
+                <v-card
+                    v-else
+                    :key="selected.name"
+                    flat
+                    max-width="400"
+                    class="pt-6 mx-auto scroll-y"
+                    style="overflow-y: auto;max-height: 750px"
+                >
+                    <v-card-text>
+                        <h2 class="headline mb-2"> Category: {{ selected.name }}</h2>
+                        <h2 class="headline mb-2"> Count of products: {{ products.total_products }}</h2>
+                        <h2 class="headline mb-2"> Count of reviews: {{ products.total_reviews }}</h2>
+                    </v-card-text>
+                    <v-btn
+                        dark
+                        class="cyan"
+                        @click="onClusterDialogMenuClicked(selected.name)">
+                        Cluster category
+                      </v-btn>
+                    <v-list subheader>
+                      <v-subheader>Products </v-subheader>
 
-                         <v-text-field
-                          v-model="topics_per_cluster_select"
-                          type="number"
-                          label="Topics per cluster"
-                          :rules="[ topics_per_cluster_rules ]"
-                        />
-                        <v-checkbox
-                          v-model="save_data_checkbox"
-                          label="Save data"
-                        ></v-checkbox>
+                      <v-list-item two-line
+                        v-for="item in products.products"
+                        :key="item.product_name"
+                        @click="onClusterDialogMenuClicked(item.product_name)"
+                      >
+                        <v-list-item-content>
+                          <div v-if="item.product_name">
+                              <v-list-item-title v-text="item.product_name"></v-list-item-title>
+                          </div>
+                          <div v-else>
+                              <v-list-item-title v-text="item.name"></v-list-item-title>
+                          </div>
+                          <v-list-item-subtitle> reviews: {{item.reviews_len}}</v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+                    </v-list>
+                </v-card>
+            </v-scroll-y-transition>
+        </v-col>
+        </v-row>
 
-                        </v-form>
-                    </v-row>
-                    <v-row>
-                        <v-col>
-                            <v-btn
-                                dark
-                                class="cyan"
-                                :disabled="!valid"
-                                @click="onSimilarityClicked">
-                                Similarity
-                              </v-btn>
-                        </v-col>
-                        <v-col>
-                            <v-btn
-                                dark
-                                class="cyan"
-                                :disabled="!valid"
-                                @click="onPeekCount">
-                                Peek count
-                              </v-btn>
-                        </v-col>
-                    </v-row>
-                </v-col>
-                </v-row>
             </v-card>
             <v-row>
                 <v-col>
@@ -205,6 +201,116 @@
            </v-data-table>
            </v-col>
         </v-dialog>
+        <v-dialog
+          v-model="cluster_dialog_menu"
+          max-width="600"
+          class="ml-4"
+        >
+        <v-card>
+            <v-card-title class="blue white--text headline">
+              Cluster menu
+            </v-card-title>
+            <div>
+                Selected category <b>{{cluster_category}}</b>
+            </div>
+
+            <v-form
+            ref="form"
+            v-model="valid"
+            lazy-validation
+            >
+              <v-select
+              v-model="embedding_type_select"
+              :items="embedding_type_items"
+              :rules="[v => !!v || 'Item is required']"
+              label="Embedding method"
+              required
+            ></v-select>
+            <v-select
+              v-model="cluster_method_select"
+              :items="cluster_method_items"
+              :rules="[v => !!v || 'Item is required']"
+              label="Cluster method"
+              required
+            ></v-select>
+            <v-row>
+                <v-col>
+                    <v-text-field
+                      v-model="clusters_pos_count_select"
+                      type="number"
+                      label="Count of positive clusters"
+                      :rules="[ clusters_count_rules ]"
+                    />
+                </v-col>
+                <v-col>
+                    <v-text-field
+                      v-model="clusters_con_count_select"
+                      type="number"
+                      label="Count of negative clusters"
+                      :rules="[ clusters_count_rules ]"
+                    />
+                </v-col>
+                </v-row>
+
+                 <v-text-field
+                  v-model="topics_per_cluster_select"
+                  type="number"
+                  label="Topics per cluster"
+                  :rules="[ topics_per_cluster_rules ]"
+                />
+                <v-checkbox
+                  v-model="save_data_checkbox"
+                  label="Save data"
+                ></v-checkbox>
+
+                </v-form>
+            <v-row>
+                <v-col>
+                    <v-btn
+                        dark
+                        class="cyan"
+                        :disabled="!valid"
+                        @click="onSimilarityClicked">
+                        Similarity
+                      </v-btn>
+                </v-col>
+                <v-col>
+                    <v-btn
+                        dark
+                        class="cyan"
+                        :disabled="!valid"
+                        @click="onPeekCount">
+                        Peek count
+                      </v-btn>
+                </v-col>
+            </v-row>
+        </v-card>
+        </v-dialog>
+        <v-dialog
+          v-model="peek_sentences_alert"
+          max-width="300"
+        >
+           <v-card>
+             <v-card-title class="blue white--text headline">
+              Peek sentences
+             </v-card-title>
+             <v-simple-table
+              >
+               <template v-slot:default>
+                <tbody>
+                  <tr>
+                    <td><h3>Positive sentences count</h3></td>
+                    <td>{{pos.sentences_count}}</td>
+                  </tr>
+                  <tr>
+                    <td><h3>Negative sentences count</h3></td>
+                    <td>{{con.sentences_count}}</td>
+                  </tr>
+                </tbody>
+              </template>
+          </v-simple-table>
+           </v-card>
+        </v-dialog>
     </v-container>
 </template>
 
@@ -217,8 +323,13 @@
     export default {
         components: {ExperimentsBrowse, GChart},
         data: () => ({
-            categories: [],
+            search: null,
+            cluster_dialog_menu: null,
+            cluster_category: null,
+            caseSensitive: false,
+            products: [],
             breadcrumbs: [],
+            active: [],
             valid: false,
             embedding_type_select: 'sent2vec_dist',
             embedding_type_items: [
@@ -272,7 +383,8 @@
                     text: 'Sentences',
                     value: 'sentence',
                 }
-            ]
+            ],
+            peek_sentences_alert: false
 
 
         }),
@@ -311,21 +423,24 @@
                     return "Invalid value"
                 }
             },
+               async loadProducts (category) {
+                const response =  await ProductService.get_products(category)
+                this.products = response.data
+
+            },
+            onClusterDialogMenuClicked (category,){
+                this.cluster_category = category
+                this.cluster_dialog_menu = true
+            },
             async onSimilarityClicked () {
-                if (this.categories.length > 1){
-                    this.alert_text = "Just one category"
-                    this.alert_code = "400"
-                    this.alert = true
-                    return
-                }
                 const config = {
                     embedding_method: this.embedding_type_select,
                     cluster_method: this.cluster_method_select,
-                    clusters_pos_count: this.clusters_pos_count_select,
-                    clusters_con_count: this.clusters_con_count_select,
+                    clusters_pos_count: Number(this.clusters_pos_count_select),
+                    clusters_con_count: Number(this.clusters_con_count_select),
                     save_data: this.save_data_checkbox,
-                    topics_per_cluster: this.topics_per_cluster_select,
-                    category: this.categories[0]
+                    topics_per_cluster: Number(this.topics_per_cluster_select),
+                    category: this.cluster_category
                 };
                 try {
                     const response = await Experiment_service.cluster_sentences(config)
@@ -365,19 +480,15 @@
             },
             async onPeekCount () {
                 const config = {
-                    category: this.categories[0]
+                    category: this.cluster_category
                 };
-                if (this.categories.length > 1){
-                    this.alert_text = "Just one category"
-                    this.alert_code = "400"
-                    this.alert = true
-                    return
-                }
                 try {
+                    this.cluster_dialog_menu = false
                     const response = await Experiment_service.peek_sentences(config)
+                    console.log(response.data)
                     this.con = response.data.con
                     this.pos = response.data.pos
-
+                    this.peek_sentences_alert = true
                 }
                 catch (error) {
                     if (error.response){
@@ -414,7 +525,25 @@
               console.log('loadBreadCrumbs')
               this.loadBreadCrumbs()
             }
-          }
+          },
+        computed: {
+          filter () {
+            return this.caseSensitive
+              ? (item, search, textKey) => item[textKey].indexOf(search) > -1
+              : undefined
+          },
+          selected () {
+            const name = this.active[0]
+            if(name == null) return undefined
+            var l = name.split(' ')
+            this.loadProducts(name)
+
+            var o = {
+                name: l[0]
+            }
+            return o
+          },
+        }
     }
 </script>
 

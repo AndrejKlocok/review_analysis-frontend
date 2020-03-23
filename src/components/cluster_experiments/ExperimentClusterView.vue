@@ -1,9 +1,6 @@
 <template>
     <v-container fluid>
         <v-card>
-            <v-card-title class="indigo white--text headline">
-                Properties
-            </v-card-title>
                 <v-row>
                     <v-col>
                         <v-card max-width="550">
