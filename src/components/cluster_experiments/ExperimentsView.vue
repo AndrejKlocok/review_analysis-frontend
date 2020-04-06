@@ -19,7 +19,7 @@
           <v-card>
             <v-card-title class="indigo white--text headline">Experiment</v-card-title>
             <v-simple-table
-                  height=300
+
                   >
                    <template v-slot:default>
                     <tbody>
@@ -58,20 +58,22 @@
                        <td>{{experiment.clusters_con_count}}</td>
                     </tr>
                     <tr>
-                        <td></td>
+                        <td>
+
+                        </td>
                         <td>
                             <v-btn rounded color="error"
                                  dark
                                  @click="onDeleteExperimentClicked()"
                                   >
-                              Delete
+                              Delete Experiment
                           </v-btn>
                         </td>
                     </tr>
                     </tbody>
                   </template>
                   </v-simple-table>
-                  <ExperimentClusterEditView v-bind:category="category" />
+                  <ExperimentClusterEditView v-bind:category_prop="category" />
       </v-card>
       </v-dialog>
         <v-dialog
@@ -94,12 +96,13 @@
     import ExperimentsBrowse from "./ExperimentsBrowse"
     import Experiment_service from "../../services/Experiment_service";
     import ExperimentClusterEditView from "./ExperimentClusterEditView";
+    import EventBus from "../../services/events";
     export default {
         components: {ExperimentClusterEditView, ExperimentsBrowse},
         name: "ExperimentsView",
         data: () => ({
                 experiments: [],
-                experiment: null,
+                experiment: {},
                 category: '',
                 dialog: false,
                 alert:false,
@@ -125,7 +128,9 @@
             methods:{
                 onExperimentClicked (value) {
                         this.experiment = value
+                        console.log(value)
                         this.category= this.experiment.category
+                        EventBus.$emit('RELOAD_EXPERIMENT', this.category)
                         this.dialog = true
                 },
                 async getExperiments () {
@@ -134,7 +139,6 @@
 
                 },
                 async onDeleteExperimentClicked () {
-
                         const req = {
                                 experiment_id:this.experiment._id
                         }

@@ -100,6 +100,29 @@
              </v-card-text>
            </v-card>
         </v-dialog>
+      <v-dialog
+          v-model="loading_data"
+          max-width="600"
+            >
+           <v-card>
+             <v-card-title class="blue white--text headline">
+              Generating dataset in progress
+            </v-card-title>
+               <v-progress-circular
+              :size="70"
+              :width="7"
+              color="purple"
+              indeterminate
+            ></v-progress-circular>
+               <v-card-text>
+                   <div>
+                       Dataset is being generated on backend side. Please wait a while.
+                        Bigger the dataset longer it takes to download the data.
+                       Generating dataset of: <b>{{categories.length}}</b> categories.
+                   </div>
+               </v-card-text>
+           </v-card>
+        </v-dialog>
   </v-container>
 </template>
 
@@ -111,6 +134,7 @@ export default {
   data: () => ({
     breadcrumbs: [],
     active: '',
+    loading_data:false,
     alert: false,
     alert_text: '',
     alert_code: 200,
@@ -185,7 +209,6 @@ export default {
         }
       },
       async onGenerateDatasetClicked () {
-
         const config = {
             task_type: this.task_type_select,
             model_type: this.model_type_select,
@@ -196,6 +219,7 @@ export default {
             categories: this.categories
         }
         console.log(config)
+        this.loading_data = true
         try {
             const response = await GenerateDataService.generate_dataset(config)
             var fileURL = window.URL.createObjectURL(new Blob([response.data]))
@@ -204,8 +228,10 @@ export default {
             fileLink.setAttribute('download', 'data.zip');
             document.body.appendChild(fileLink);
             fileLink.click();
+            this.loading_data = false
         }
         catch (error) {
+            this.loading_data = false
             if (error.response){
                 // other then 2xx
                 const reader = new FileReader()

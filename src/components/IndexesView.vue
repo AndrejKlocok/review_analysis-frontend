@@ -1,14 +1,17 @@
 <template>
-  <v-data-table
-    :headers="headers"
-    :items="indexes"
-    :sort-by="['Index', 'Count of documents', 'Size']"
-    :sort-desc="[false, true]"
-    multi-sort
-    :items-per-page="20"
-    :hide-default-footer="true"
-    class="elevation-1"
-  ></v-data-table>
+  <v-container fluid>
+    <h1>Elasticsearch indexes view</h1>
+    <v-data-table
+      :headers="headers"
+      :items="indexes"
+      :sort-by="['Index', 'Count of documents', 'Size']"
+      :sort-desc="[false, true]"
+      multi-sort
+      :items-per-page="20"
+      :hide-default-footer="true"
+      class="elevation-1"
+    ></v-data-table>
+  </v-container>
 </template>
 
 <script>

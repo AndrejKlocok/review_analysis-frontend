@@ -11,8 +11,9 @@
             <v-card-title class="indigo white--text headline">
                 Login
             </v-card-title>
+              <v-icon large color="black">account_circle</v-icon>
             <v-simple-table
-                          height=300
+                          height=100
                           >
                            <template v-slot:default>
                             <tbody>
@@ -24,10 +25,20 @@
                                 <td>User level</td>
                                 <td>{{user.level}}</td>
                               </tr>
-
                             </tbody>
                           </template>
                       </v-simple-table>
+              <v-card-text>
+                  <span v-if="user.level==='user'">
+                      Basic User gets partial functionality like product searching and simple demo
+                      for model testing.
+                  </span>
+                  <span v-else>
+                      User analyst gets all access to review analyst functionality like: indexes view,
+                  product searching, generating specific datasets (reusability of Review analysis),
+                  actualization statics, clustering interface, simple demo for model testing.
+                  </span>
+              </v-card-text>
           </v-card>
         </section>
     </v-container>

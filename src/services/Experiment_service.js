@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const ax = axios.create({baseURL: `http://localhost:8081/experiment`})
-//const ax = axios.create({baseURL: `http://athena18.fit.vutbr.cz:42069/experiment`})
+//const ax = axios.create({baseURL: `http://pcknot5.fit.vutbr.cz:42069/experiment`})
 
 export default {
   cluster_sentences (config) {
@@ -23,7 +23,10 @@ export default {
     return ax.post('cluster_peek', config, {timeout: 600000})
   },
   update_topic_name(config) {
-    return ax.put('cluster/topic', config, {timeout: 60000})
+    return ax.put('cluster/topic', config,)
+  },
+    merge_topic(config) {
+    return ax.post('cluster/topic', config,)
   },
   get_experiment_sentences (config) {
     return ax.post('sentences', config, {timeout: 600000})
@@ -40,5 +43,13 @@ export default {
   check_irrelevant (config) {
     return ax.post('text_irrelevant', config)
   },
-
+  update_sentence(config) {
+    return ax.post('update_sentence', config)
+  },
+  create_cluster(config) {
+    return ax.post('experiment_cluster', config,)
+  },
+  update_topics(config) {
+    return ax.put('experiment_cluster_topics', config,)
+  }
 }

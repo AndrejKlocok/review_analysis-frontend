@@ -21,7 +21,7 @@
                 >
                   <div v-if="product.domain === 'shop'">
                     <v-simple-table
-                          height=300
+                          height=350
                           >
                            <template v-slot:default>
                             <tbody>
@@ -36,6 +36,16 @@
                             <tr>
                                 <td>Info</td>
                                 <td>{{product.info}}</td>
+                              </tr>
+                            <tr>
+                            <tr>
+                                <td>Average rating</td>
+                                <td>{{avg_rev}}</td>
+                              </tr>
+                            <tr>
+                            <tr>
+                                <td>Average reccomends</td>
+                                <td>{{avg_rec}}</td>
                               </tr>
                             <tr>
                                 <td>Heureka</td>
@@ -76,7 +86,7 @@
                   </div>
                   <div v-else>
                       <v-simple-table
-                          height=300
+                          height=350
                           >
                            <template v-slot:default>
                             <tbody>
@@ -91,6 +101,16 @@
                             <tr>
                                 <td>Category</td>
                                 <td>{{product.category}}</td>
+                              </tr>
+                            <tr>
+                            <tr>
+                                <td>Average rating</td>
+                                <td>{{avg_rev}}</td>
+                              </tr>
+                            <tr>
+                            <tr>
+                                <td>Average reccomends</td>
+                                <td>{{avg_rec}}</td>
                               </tr>
                             <tr>
                                 <td>Heureka</td>
@@ -126,6 +146,11 @@
         <v-card>
 
         </v-card>
+        <GChart
+             type="LineChart"
+             :data="chart_data"
+             :options="chartOptions"
+         />
         <ExperimentClusterView v-bind:experiment="experiment" />
     </v-container>
 </template>
@@ -135,13 +160,22 @@
     import ProductService from "../../services/ProductService"
     import Experiment_service from "../../services/Experiment_service";
     import ExperimentClusterView from "../cluster_experiments/ExperimentClusterView";
+    import {GChart} from "vue-google-charts";
+
     export default {
-        components: {ExperimentClusterView, ProductBrowse},
+        components: {ExperimentClusterView, ProductBrowse, GChart},
         data () {
             return {
               product: null,
               image_link: '',
-              experiment: null
+              experiment: null,
+              avg_rec: '',
+              avg_rev: '',
+              chartOptions: {
+                legend: { position: 'none' },
+                title: 'Reviews in time',
+              },
+              chart_data: []
             }
           },
         methods: {
@@ -197,6 +231,42 @@
                     }
                 }
             },
+            async getStatistics(){
+              const config = {
+                  domain: this.product.domain,
+                  name: this.product.product_name
+              }
+              if (this.product.domain === "shop"){
+                  config.name = this.product.name
+              }
+              try {
+                    const response = await ProductService.get_statistics(config)
+                    console.log(response.data)
+                    this.avg_rev = response.data.avg_rating
+                    this.avg_rec = response.data.avg_recommends
+                    var chart_data = [['Time', 'reviews']]
+                    response.data.review_dates.forEach(function (item) {
+                        chart_data.push([item[0], item[1]])
+                    })
+                    this.chart_data = chart_data
+                }
+                catch (error) {
+                    if (error.response){
+                        // other then 2xx
+                        console.log(error.response.data)
+                        console.log(error.response.status)
+                        console.log(error.response.headers)
+                    }
+                    else if (error.request) {
+                        //timeout
+                        console.log(error.request);
+                    } else {
+                        // Something happened in setting up the request and triggered an Error
+                        console.log('Error', error.message);
+                    }
+                }
+
+            },
             openHeureka (){
                 if(this.product.domain === 'shop'){
                     window.open(this.product.url_review, "_blank")
@@ -226,6 +296,7 @@
                 return
             }
             this.getProductImage()
+            this.getStatistics()
             this.getExperimentSentences()
         }
     }

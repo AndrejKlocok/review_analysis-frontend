@@ -52,7 +52,7 @@
               style="overflow-y: auto;max-height: 600px"
             >
                 <template v-slot:prepend="{item}">
-                <v-icon v-if="!item.children">mdi-account</v-icon>
+                <v-icon v-if="!item.children">shopping_basket</v-icon>
               </template>
           </v-treeview>
         </v-col>

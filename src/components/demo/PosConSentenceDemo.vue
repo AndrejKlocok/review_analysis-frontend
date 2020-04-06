@@ -21,8 +21,18 @@
                   label="Text"
                   :rules="rules"
                 ></v-textarea>
+                <v-select
+                  v-model="model_type"
+                  :items="pos_con_models"
+                  :rules="[v => !!v || 'Item is required']"
+                  label="Bert bipolar model"
+                  required
+                ></v-select>
             </v-form>
-            <h2>Polarity: {{polarity}}</h2>
+            <h2>Polarity:
+                <span v-if="polarity==='0'"> positive</span>
+                <span v-else> negative</span>
+            </h2>
             <v-btn
                 dark
                 class="cyan"
@@ -62,11 +72,30 @@
             alert_code: 200,
             alert_text: '',
             valid: false,
+            model_type: 'general',
+            pos_con_models: [
+                'general',
+                'elektronika',
+                'bile_zbozi',
+                'dum_a_zahrada',
+                'chovatelstvi',
+                'auto-moto',
+                'detske_zbozi',
+                'obleceni_a_moda',
+                'filmy_knihy_hry',
+                'kosmetika_a_zdravi',
+                'sport',
+                'hobby',
+                'jidlo_a_napoje',
+                'stavebniny',
+                'sexualni_a_eroticke_pomucky',
+            ]
         }),
         methods:{
             async onCheckSentence () {
                 const data = {
-                    sentence: this.sentence_text
+                    sentence: this.sentence_text,
+                    model_type: this.model_type
                 }
                 try {
                     console.log(data)

@@ -22,7 +22,7 @@
                   :rules="rules"
                 ></v-textarea>
             </v-form>
-            <h2>Rating: {{rating}}</h2>
+            <h2>Rating: {{rating}}/100</h2>
             <v-btn
                 dark
                 class="cyan"

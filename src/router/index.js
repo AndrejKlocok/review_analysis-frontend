@@ -2,7 +2,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import IndexesView from '../components/IndexesView'
 import GenerateDataset from '../components/GenerateDataset'
-import ActualizeElastic from '../components/ActualizeElastic'
+import ActualizeElastic from '../components/actualize/ActualizeElastic'
 import BrowseData from '../components/BrowseData'
 import ProductView from "../components/product_view/ProductView"
 import ProductTreeView from "../components/product_view/ProductTreeView"
@@ -23,6 +23,12 @@ Vue.use(Router)
 
 export default new Router({
   routes: [
+    {
+      path: '/',
+      name: 'home',
+      component: NotLoggedHome
+    },
+
     {
       path: '/home',
       name: 'not_logged_home',

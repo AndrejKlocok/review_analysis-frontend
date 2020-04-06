@@ -219,7 +219,7 @@
             v-model="valid"
             lazy-validation
             >
-              <v-select
+            <v-select
               v-model="embedding_type_select"
               :items="embedding_type_items"
               :rules="[v => !!v || 'Item is required']"
@@ -311,6 +311,62 @@
           </v-simple-table>
            </v-card>
         </v-dialog>
+        <v-dialog
+          v-model="loading_data"
+          max-width="600"
+            >
+           <v-card>
+             <v-card-title class="blue white--text headline">
+              Clustering of {{cluster_category}} in progress
+            </v-card-title>
+               <v-progress-circular
+              :size="70"
+              :width="7"
+              color="purple"
+              indeterminate
+            ></v-progress-circular>
+               <v-card-text>
+                   <div>
+                        Clustering is performed on backend site. Unfortunately it takes time.
+                   </div>
+               </v-card-text>
+               <v-simple-table
+                  >
+                   <template v-slot:default>
+                    <tbody>
+                      <tr>
+                        <td>Positive sentences</td>
+                        <td>{{peek_pos_cnt}}</td>
+                      </tr>
+                      <tr>
+                        <td>Negative sentences</td>
+                        <td>{{peek_con_cnt}}</td>
+                      </tr>
+                      <tr>
+                        <td>Embedding method</td>
+                        <td>{{embedding_type_select}}</td>
+                      </tr>
+                      <tr>
+                        <td>Cluster method</td>
+                        <td>{{cluster_method_select}}</td>
+                      </tr>
+                      <tr>
+                        <td>Positive clusters selected</td>
+                        <td>{{clusters_pos_count_select}}</td>
+                      </tr>
+                      <tr>
+                        <td>Negative clusters selected</td>
+                        <td>{{clusters_con_count_select}}</td>
+                      </tr>
+                      <tr>
+                        <td>Save data</td>
+                        <td>{{save_data_checkbox}}</td>
+                      </tr>
+                    </tbody>
+                  </template>
+              </v-simple-table>
+           </v-card>
+        </v-dialog>
     </v-container>
 </template>
 
@@ -384,9 +440,10 @@
                     value: 'sentence',
                 }
             ],
-            peek_sentences_alert: false
-
-
+            peek_sentences_alert: false,
+            loading_data: false,
+            peek_pos_cnt: 0,
+            peek_con_cnt: 0,
         }),
         methods: {
             async loadBreadCrumbs () {
@@ -416,7 +473,7 @@
                 if (value == null) {
                     return "Invalid value"
                 }
-                else if (value > 1 && value < 6){
+                else if (value >= 1 && value < 6){
                     return true
                 }
                 else {
@@ -442,7 +499,16 @@
                     topics_per_cluster: Number(this.topics_per_cluster_select),
                     category: this.cluster_category
                 };
+                this.cluster_dialog_menu = false
+
                 try {
+                    const response_peek = await Experiment_service.peek_sentences({
+                        category: this.cluster_category
+                    })
+                    this.peek_con_cnt = response_peek.data.con.sentences_count
+                    this.peek_pos_cnt = response_peek.data.pos.sentences_count
+
+                    this.loading_data = true
                     const response = await Experiment_service.cluster_sentences(config)
 
                     var arr_pos = [['Cluster', 'sentences_count']]
@@ -458,9 +524,11 @@
                         arr_con.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
                     })
                     this.chartData_con = arr_con
+                    this.loading_data = false
                 }
                 catch (error) {
-                    if (error.response){
+                    this.loading_data = false
+                    if (error.response) {
                         // other then 2xx
                         this.alert_text = error.response.data.error
                         this.alert_code = error.response.data.error_code
@@ -468,8 +536,7 @@
                         console.log(error.response.data)
                         console.log(error.response.status)
                         console.log(error.response.headers)
-                    }
-                    else if (error.request) {
+                    } else if (error.request) {
                         //timeout
                         console.log(error.request);
                     } else {
@@ -477,6 +544,8 @@
                         console.log('Error', error.message);
                     }
                 }
+                this.peek_pos_cnt = 0
+                this.peek_con_cnt = 0
             },
             async onPeekCount () {
                 const config = {
