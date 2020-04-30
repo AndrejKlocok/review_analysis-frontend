@@ -28,6 +28,8 @@
               <span v-if="item.items.sum_label"><v-icon large color="orange">reorder</v-icon></span>
               <span v-if="item.items.rat_diff_label > 20"><v-icon large color="yellow">bug_report</v-icon></span>
               <span v-else-if="0 > item.items.rat_diff_label"><v-icon large color="red">bug_report</v-icon></span>
+              <span v-if="item.items.filter_model"><v-icon large color="blue">label</v-icon></span>
+              <span v-if="item.items.data_processed"><v-icon large color="grey">build</v-icon></span>
           </template>
         </v-data-table>
         </v-card>
@@ -49,11 +51,10 @@
                     <v-col>
                         <v-card max-width="300">
                             <v-card-title>
-                                Review informations
+                                Review details
 
                             </v-card-title>
                             <v-simple-table
-                                  height=300
                                   >
                                    <template v-slot:default>
                                     <tbody>
@@ -104,21 +105,6 @@
                             </v-simple-table>
                           </v-card>
                           </v-col>
-                      </v-row>
-                      <v-row>
-                          <v-card>
-                              <v-card-title>
-                                Author`s summary
-                            </v-card-title>
-
-                              <div align="left"
-                                  v-for="(sum_d, i) in summary_experiment"
-                                  :key="i">
-                                <span v-if="sum_d.label==='0'" v-html="sum_d.sentence" class="pos_sentence"></span>
-                                <span v-else v-html="sum_d.sentence" class="neg_sentence"></span>
-
-                              </div>
-                          </v-card>
                       </v-row>
                     </v-col>
                   </v-row>
@@ -195,6 +181,21 @@
                           </v-card>
                       </v-col>
                   </v-row>
+                <v-row>
+                          <v-card>
+                              <v-card-title>
+                                Author`s summary
+                            </v-card-title>
+
+                              <div align="left"
+                                  v-for="(sum_d, i) in summary_experiment"
+                                  :key="i">
+                                <span v-if="sum_d.label==='0'" v-html="sum_d.sentence" class="pos_sentence"></span>
+                                <span v-else v-html="sum_d.sentence" class="neg_sentence"></span>
+
+                              </div>
+                          </v-card>
+                      </v-row>
                 </v-container>
             </v-card>
     </v-dialog>
@@ -264,7 +265,7 @@
               Help for review table
             </v-card-title>
             <v-simple-table
-              height=350
+              height=380
               >
                <template v-slot:default>
                 <tbody>
@@ -286,7 +287,15 @@
                   </tr>
                   <tr>
                     <td><v-icon large color="red">bug_report</v-icon></td>
-                    <td>Models rating is lower than autors rating</td>
+                    <td>Models rating is lower than authors rating</td>
+                  </tr>
+                  <tr>
+                    <td><v-icon large color="blue">label</v-icon></td>
+                    <td>Review was processed by irrelevant model</td>
+                  </tr>
+                  <tr>
+                    <td><v-icon large color="grey">build</v-icon></td>
+                    <td>Review was processed by bipolar models</td>
                   </tr>
                 </tbody>
               </template>
@@ -366,6 +375,35 @@
                </v-card-text>
            </v-card>
         </v-dialog>
+        <v-dialog
+          v-model="empty_review"
+          max-width="300"
+            >
+           <v-card>
+             <v-card-title class="red white--text headline">
+              Error - empty review
+             </v-card-title>
+
+               <v-card-text>
+                   Review is empty, it can be caused by filter model, which filtered out all irrelevant sentences
+                   and thus review is empty. Pick another one please.
+
+               </v-card-text>
+           </v-card>
+        </v-dialog>
+        <v-dialog
+          v-model="alert"
+          max-width="300"
+        >
+           <v-card>
+             <v-card-title class="red white--text headline">
+              API Error - {{alert_code}}
+            </v-card-title>
+             <v-card-text>
+                 <h3>{{alert_text}}</h3>
+             </v-card-text>
+           </v-card>
+        </v-dialog>
     </v-container>
 </template>
 
@@ -424,6 +462,10 @@
                 help_review_table:false,
                 help_review:false,
                 loading_data:false,
+                empty_review: false,
+                alert: false,
+                alert_text: '',
+                alert_code: 200,
             }
           },
         methods:{
@@ -441,13 +483,20 @@
                     const response = await ProductService.get_reviews_by_product_name(config)
                     const revs = response.data
                     for (var i = 0; i < revs.length; i++) {
+                        var processed = false
+                        if(revs[i].pos_model || revs[i].con_model) {
+                            processed = true
+                        }
                         revs[i].items = {
                             pros_label: revs[i].pros.length > 0,
                             cons_label: revs[i].cons.length > 0,
                             sum_label: revs[i].summary.length > 0,
                             rat_diff_label: revs[i].rating_diff,
+                            filter_model: revs[i].filter_model,
+                            data_processed: processed
                         }
                     }
+                    console.log(revs)
                     this.reviews = revs
                 }
             },
@@ -477,8 +526,11 @@
                     this.loading_data = false
                     if (error.response){
 
-                        // 400 is empty review
-                        if (error.response.data.error_code !== 400) {
+                        // 404 is empty review
+                        if (error.response.data.error_code === 404) {
+                            this.empty_review = true
+                        }
+                        else {
                             this.alert_text = error.response.data.error
                             this.alert_code = error.response.data.error_code
                             this.alert = true

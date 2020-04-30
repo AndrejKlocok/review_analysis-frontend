@@ -142,10 +142,18 @@
           class="ml-4 scroll-y"
           style="overflow-y: auto;max-height: 700px"
         >
+            <v-card>
             <v-card-title class="blue white--text headline">
               Sentences view
             </v-card-title>
-           <v-col>
+            <v-card-text>
+                    <div>
+                        Cluster <h2><b>{{cluster_edit_data.cluster_name}}</b></h2>
+                    </div>
+                    <div>
+                        Topic <h3><b>{{cluster_topic_name}}({{cluster_items_per_page}})</b></h3>
+                    </div>
+                </v-card-text>
                <v-data-table
                  :items-per-page="cluster_items_per_page"
                  :headers="cluster_headers"
@@ -154,18 +162,24 @@
                  :hide-default-footer="true"
                 >
            </v-data-table>
-           </v-col>
+
+            </v-card>
         </v-dialog>
         <v-dialog
           v-model="cluster_edit_dialog"
           max-width="300"
-          class="ml-4 scroll-y"
+          class="ml-4"
           style="overflow-y: auto;max-height: 700px"
         >
             <v-card>
                 <v-card-title class="blue white--text headline">
-                Edit cluster {{cluster_edit_data.cluster_name}}
+                    Edit cluster
                 </v-card-title>
+                <v-card-text>
+                    <h2>
+                        {{cluster_edit_data.cluster_name}}
+                    </h2>
+                </v-card-text>
                 <v-card>
                     <v-card-title>
                         Rename cluster
@@ -286,10 +300,10 @@
                 </v-card-title>
                 <v-card-text>
                     <div>
-                        Cluster <h3><b>{{cluster_edit_data.cluster_name}}</b></h3>
+                        Cluster <h2><b>{{cluster_edit_data.cluster_name}}</b></h2>
                     </div>
                     <div>
-                        Edit topic <h4><b>{{cluster_topic_name}}</b></h4>
+                        Edit topic <h3><b>{{cluster_topic_name}}</b></h3>
                     </div>
                 </v-card-text>
                 <v-card>
@@ -376,9 +390,14 @@
             <v-card>
                 <v-card-title class="blue white--text headline">
                     <div>
-                        Edit sentences in cluster {{cluster_edit_data.cluster_name}}
+                        Edit sentences in cluster
                     </div>
                 </v-card-title>
+                <v-card-text>
+                    <h2>
+                        {{cluster_edit_data.cluster_name}}
+                    </h2>
+                </v-card-text>
                    <v-data-table
                      :items-per-page="cluster_items_per_page"
                      :headers="cluster_headers_edit"
@@ -721,8 +740,10 @@
                     const response = await Experiment_service.update_topics(req)
                     console.log(response.data)
                     this.getExperimentSentences()
+                    this.cluster_edit_dialog = false
                 }
                 catch (error) {
+                    this.cluster_edit_dialog = false
                     if (error.response) {
                         // other then 2xx
                         this.alert_text = error.response.data.error
@@ -740,12 +761,14 @@
                     }
                 }
             },
-            onTopicClicked (value, topic) {
-                console.log(value)
-                console.log(topic)
+            onTopicClicked (cluster, topic) {
+                this.cluster_topic_data = topic
+                this.cluster_topic_name = topic.name
+                this.cluster_edit_data = cluster
+
                 const sentences = []
                 try {
-                    value.sentences.forEach(function (item) {
+                    cluster.sentences.forEach(function (item) {
                         if (item.topic_id === topic._id) {
                              sentences.push(item)
                         }
@@ -775,7 +798,6 @@
                 this.cluster_edit_dialog = true
             },
             onClusterTopicEdit(cluster, topic, index) {
-                console.log(topic)
                 this.cluster_topic_name = topic.name
                 this.cluster_topic_data = topic
                 this.cluster_topic_index = index
@@ -971,11 +993,11 @@
                 try {
                     console.log(config)
                     await Experiment_service.cluster_merge(config)
-                    this.cluster_merge_dialog = false
+                    this.cluster_edit_dialog = false
                     this.getExperimentSentences()
                 }
                 catch (error) {
-                    this.cluster_merge_dialog = false
+                    this.cluster_edit_dialog = false
                     if (error.response){
                         // other then 2xx
                         this.alert_text = error.response.data.error

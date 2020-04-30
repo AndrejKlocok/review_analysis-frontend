@@ -55,28 +55,6 @@ const store = new Vuex.Store({
 
   },
   actions: {
-    /*
-    login (context, userData) {
-      context.commit('SET_USER_DATA', {userData})
-      return authenticate(userData)
-          .then ( response => context.commit('SET_JWT_TOKEN', {
-            jwt: response.data
-          }))
-          .catch(error => {
-            console.log('Error login: ', error)
-            EventBus.$emit('loginFailed', error)
-          })
-    },
-    register (context, userData) {
-      context.commit('SET_USER_DATA', {userData})
-      return register(userData)
-          .then(context.dispatch('login', userData))
-          .catch(error => {
-            console.log('Error register: ', error)
-            EventBus.$emit('registerFailed', error)
-          })
-    }
-     */
   },
   getters: {
     isAuthenticated (state) {

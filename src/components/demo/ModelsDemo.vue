@@ -41,7 +41,7 @@
                 <v-card-text>
                     There are relevant sentences, which addresses key aspects of products and give authors opinion. And then,
                     there are reviews which does tell nothing, these reviews are filtered out during actualization. Model
-                    for classification of relevant sentences consists of SVM classifier with Sent2Vec embeddings used with it.
+                    for classification of relevant sentences consists of SVM classifier with FSE embeddings used with it.
                 </v-card-text>
             </v-card>
     </v-card>

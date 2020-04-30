@@ -3,19 +3,19 @@
       <h2>Generate Dataset</h2>
   <v-card
     class="mx-auto"
-
     tile>
       <v-row>
           <v-col>
               <v-treeview
                 v-model="categories"
                 dense
-                class="ml-4"
                 :items="breadcrumbs"
                 activatable
                 item-key="name"
                 open-on-click
                 selectable
+                class="ml-4 scroll-y"
+                style="overflow-y: auto;max-height: 600px"
               >
               </v-treeview>
         </v-col>
@@ -41,6 +41,7 @@
                       :rules="[v => !!v || 'Item is required']"
                       label="Type of task"
                       required
+
                     ></v-select>
                     <v-select
                       v-model="model_type_select"

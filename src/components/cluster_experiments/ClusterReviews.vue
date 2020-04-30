@@ -203,87 +203,94 @@
         </v-dialog>
         <v-dialog
           v-model="cluster_dialog_menu"
-          max-width="600"
-          class="ml-4"
+          max-width="400"
+          class="mx-4"
+          style="overflow-y: unset"
         >
-        <v-card>
+        <v-card
+        style="overflow-y: unset"
+            >
             <v-card-title class="blue white--text headline">
               Cluster menu
             </v-card-title>
             <div>
                 Selected category <b>{{cluster_category}}</b>
             </div>
+            <v-flex shrink class="select">
+                <v-form
+                ref="form"
+                v-model="valid"
+                lazy-validation
+                >
 
-            <v-form
-            ref="form"
-            v-model="valid"
-            lazy-validation
-            >
-            <v-select
-              v-model="embedding_type_select"
-              :items="embedding_type_items"
-              :rules="[v => !!v || 'Item is required']"
-              label="Embedding method"
-              required
-            ></v-select>
-            <v-select
-              v-model="cluster_method_select"
-              :items="cluster_method_items"
-              :rules="[v => !!v || 'Item is required']"
-              label="Cluster method"
-              required
-            ></v-select>
-            <v-row>
-                <v-col>
-                    <v-text-field
-                      v-model="clusters_pos_count_select"
+                <v-select
+                  v-model="embedding_type_select"
+                  :items="embedding_type_items"
+                  :rules="[v => !!v || 'Item is required']"
+                  label="Embedding method"
+                  required
+                ></v-select>
+                <v-select
+                  v-model="embedding_model_select"
+                  :items="embedding_model_items"
+                  :rules="[v => !!v || 'Item is required']"
+                  label="Embedding model"
+                  required
+                ></v-select>
+                <v-select
+                  v-model="cluster_method_select"
+                  :items="cluster_method_items"
+                  :rules="[v => !!v || 'Item is required']"
+                  label="Cluster method"
+                  required
+                ></v-select>
+                <v-row>
+                    <v-col>
+                        <v-text-field
+                          v-model="clusters_pos_count_select"
+                          type="number"
+                          label="Count of positive clusters"
+                          :rules="[ clusters_count_rules ]"
+                        />
+                    </v-col>
+                    <v-col>
+                        <v-text-field
+                          v-model="clusters_con_count_select"
+                          type="number"
+                          label="Count of negative clusters"
+                          :rules="[ clusters_count_rules ]"
+                        />
+                    </v-col>
+                    </v-row>
+
+                     <v-text-field
+                      v-model="topics_per_cluster_select"
                       type="number"
-                      label="Count of positive clusters"
-                      :rules="[ clusters_count_rules ]"
+                      label="Topics per cluster"
+                      :rules="[ topics_per_cluster_rules ]"
                     />
-                </v-col>
-                <v-col>
-                    <v-text-field
-                      v-model="clusters_con_count_select"
-                      type="number"
-                      label="Count of negative clusters"
-                      :rules="[ clusters_count_rules ]"
-                    />
-                </v-col>
+                    </v-form>
+                <v-row>
+                    <v-col>
+                        <v-btn
+                            dark
+                            class="cyan"
+                            :disabled="!valid"
+                            @click="onSimilarityClicked">
+                            Similarity
+                          </v-btn>
+                    </v-col>
+                    <v-col>
+                        <v-btn
+                            dark
+                            class="cyan"
+                            :disabled="!valid"
+                            @click="onPeekCount">
+                            Peek count
+                          </v-btn>
+                    </v-col>
                 </v-row>
-
-                 <v-text-field
-                  v-model="topics_per_cluster_select"
-                  type="number"
-                  label="Topics per cluster"
-                  :rules="[ topics_per_cluster_rules ]"
-                />
-                <v-checkbox
-                  v-model="save_data_checkbox"
-                  label="Save data"
-                ></v-checkbox>
-
-                </v-form>
-            <v-row>
-                <v-col>
-                    <v-btn
-                        dark
-                        class="cyan"
-                        :disabled="!valid"
-                        @click="onSimilarityClicked">
-                        Similarity
-                      </v-btn>
-                </v-col>
-                <v-col>
-                    <v-btn
-                        dark
-                        class="cyan"
-                        :disabled="!valid"
-                        @click="onPeekCount">
-                        Peek count
-                      </v-btn>
-                </v-col>
-            </v-row>
+            </v-flex>
         </v-card>
         </v-dialog>
         <v-dialog
@@ -358,10 +365,6 @@
                         <td>Negative clusters selected</td>
                         <td>{{clusters_con_count_select}}</td>
                       </tr>
-                      <tr>
-                        <td>Save data</td>
-                        <td>{{save_data_checkbox}}</td>
-                      </tr>
                     </tbody>
                   </template>
               </v-simple-table>
@@ -387,11 +390,16 @@
             breadcrumbs: [],
             active: [],
             valid: false,
-            embedding_type_select: 'sent2vec_dist',
+            embedding_type_select: 'fse_dist',
             embedding_type_items: [
-                'sent2vec_dist',
-                'sent2vec_sim',
-                'sent2vec_vec'
+                'fse_dist',
+                'fse_sim',
+                'fse_vec'
+            ],
+            embedding_model_select: 'FastText_300d',
+            embedding_model_items: [
+                'FastText_pretrained',
+                'FastText_300d',
             ],
             cluster_method_select: 'kmeans',
             cluster_method_items: [
@@ -400,7 +408,6 @@
             clusters_pos_count_select: 7,
             clusters_con_count_select: 4,
             topics_per_cluster_select: 3,
-            save_data_checkbox: true,
             alert: false,
             alert_text: '',
             alert_code: 200,
@@ -492,10 +499,10 @@
             async onSimilarityClicked () {
                 const config = {
                     embedding_method: this.embedding_type_select,
+                    embedding_model: this.embedding_model_select,
                     cluster_method: this.cluster_method_select,
                     clusters_pos_count: Number(this.clusters_pos_count_select),
                     clusters_con_count: Number(this.clusters_con_count_select),
-                    save_data: this.save_data_checkbox,
                     topics_per_cluster: Number(this.topics_per_cluster_select),
                     category: this.cluster_category
                 };
@@ -617,5 +624,15 @@
 </script>
 
 <style scoped>
-
+.v-select__selections input {
+    display: none;
+    width: 0;
+    max-width: none;
+}
+.select {
+    min-width: 100px;
+}
+.v-select.v-input--is-dirty input {
+  display: none;
+}
 </style>

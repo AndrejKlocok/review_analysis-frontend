@@ -76,24 +76,37 @@
                     class="pt-6 mx-auto scroll-y"
                     style="overflow-y: auto;max-height: 750px"
                 >
-                    <v-card-text>
+                    <v-card>
+                        <v-card-text>
                         <h2 class="headline mb-2"> Category: {{ selected.name }}</h2>
                         <h2 class="headline mb-2"> Count of products: {{ products.total_products }}</h2>
                         <h2 class="headline mb-2"> Count of reviews: {{ products.total_reviews }}</h2>
-                    </v-card-text>
-                    <v-btn
-                        dark
-                        class="cyan"
-                        @click="getExperiment">
-                        Cluster experiment
-                    </v-btn>
+                        </v-card-text>
+                        <v-btn
+                            dark
+                            class="cyan"
+                            @click="getExperiment">
+                            Cluster experiment
+                        </v-btn>
+                    </v-card>
+
+                    <v-sheet class="pa-4 lighten-2">
+                        <v-text-field
+                                class="mx-3"
+                                flat label="Search"
+                                prepend-inner-icon="search"
+                                solo-inverted v-model="search_product"
+                                clearable @click:clear="search_product_clear">
+                        </v-text-field>
+                    </v-sheet>
                     <v-list subheader>
                       <v-subheader>Products </v-subheader>
 
                       <v-list-item two-line
-                        v-for="item in products.products"
+                        v-for="item in products_filtered"
                         :key="item.product_name"
                         @click="onProductClicked(item)"
+                        ripple
                       >
                         <v-list-item-content>
                           <div v-if="item.product_name">
@@ -147,9 +160,13 @@ export default {
   data: () => ({
     breadcrumbs: [],
     search: null,
+    search_product: '',
     caseSensitive: false,
     active: [],
-    products: [],
+    products: {
+        products: []
+    },
+
     experiment: {
         pos:{
             clusters: []
@@ -168,6 +185,9 @@ export default {
     alert_code: 200,
   }),
   methods: {
+    search_product_clear() {
+      this.search_product = ''
+    },
     async loadBreadCrumbs () {
       try {
         const response = await ProductService.get_index_categories()
@@ -266,6 +286,16 @@ export default {
         }
         return o
       },
+      products_filtered () {
+          if (this.search_product===null){
+              return this.products.products
+          }
+          else {
+              return this.products.products.filter((item => {
+                  return item.product_name.toLowerCase().match(this.search_product.toLowerCase())
+              }))
+          }
+      }
     }
 }
 </script>

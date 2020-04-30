@@ -1,7 +1,7 @@
 <template>
     <v-container fluid>
         <demo-browse/>
-        <h1>Positive/Negative senteces</h1>
+        <h1>Positive/Negative sentences</h1>
         <v-card
             class="mx-auto"
             max-height="800"

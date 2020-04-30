@@ -102,10 +102,18 @@
           class="ml-4 scroll-y"
           style="overflow-y: auto;max-height: 700px"
         >
+        <v-card>
             <v-card-title class="blue white--text headline">
               Sentences view
             </v-card-title>
-           <v-col>
+            <v-card-text>
+                    <div>
+                        Cluster <h2><b>{{cluster_edit_data.cluster_name}}</b></h2>
+                    </div>
+                    <div v-if="cluster_topic_name">
+                        Topic <h3><b>{{cluster_topic_name}}</b></h3>
+                    </div>
+                </v-card-text>
                <v-data-table
                  :headers="cluster_headers"
                  :items-per-page="cluster_items_per_page"
@@ -113,8 +121,8 @@
                  class="elevation-1"
                  :hide-default-footer="true"
                 >
-           </v-data-table>
-           </v-col>
+                </v-data-table>
+            </v-card>
         </v-dialog>
     </v-container>
 </template>
@@ -126,6 +134,8 @@
         props: ['experiment'],
         data: () => ({
             sentences: [],
+            cluster_edit_data: {},
+            cluster_topic_name: '',
             sentence_dialog: false,
             cluster_items_per_page: 10,
             cluster_headers:[
@@ -136,11 +146,11 @@
             ],
         }),
         methods: {
-            onTopicClicked (value, topic) {
-                console.log(value)
-                console.log(topic)
+            onTopicClicked (cluster, topic) {
+                this.cluster_topic_name = topic.name
+                this.cluster_edit_data = cluster
                 const sentences = []
-                value.sentences.forEach(function (item) {
+                cluster.sentences.forEach(function (item) {
                     if (item.topic_id === topic._id) {
                          sentences.push(item)
                     }
@@ -149,10 +159,12 @@
                 this.cluster_items_per_page = sentences.length
                 this.sentence_dialog = true
             },
-            onClusterClicked(value) {
-                console.log(value)
-                this.sentences = value.sentences
-                this.cluster_items_per_page = value.sentences.length
+            onClusterClicked(cluster) {
+                this.cluster_topic_name = ''
+                this.cluster_edit_data = cluster
+
+                this.sentences = cluster.sentences
+                this.cluster_items_per_page = cluster.sentences.length
                 this.sentence_dialog = true
             },
         },
