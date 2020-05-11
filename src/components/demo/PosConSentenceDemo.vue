@@ -61,6 +61,7 @@
 <script>
     import DemoBrowse from "./DemoBrowse"
     import Experiment_service from "../../services/Experiment_service"
+    import EventBus from "../../services/events";
     export default {
         name: "PosConSentenceDemo",
         components: {DemoBrowse},
@@ -92,22 +93,31 @@
             ]
         }),
         methods:{
+            /**
+             * Perform evaluation of sentence/text on backend site.
+             * @returns {Promise<void>}
+             */
             async onCheckSentence () {
+                // object that will be sent to API
                 const data = {
                     sentence: this.sentence_text,
                     model_type: this.model_type
                 }
                 try {
-                    console.log(data)
-                    const response = await Experiment_service.check_polarity(data)
-                    console.log(response.data)
+                    // send request
+                    const response = await Experiment_service.check_polarity(data, this.$store.state.jwt)
+                    // set up result
                     this.polarity = response.data.polarity
                 } catch (error) {
+                    // error handle
                     if (error.response){
-                        // other then 2xx
-                        this.alert_text = error.response.data.error
-                        this.alert_code = error.response.data.error_code
-                        this.alert = true
+                        if(error.response.status === 401){
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                        } else {
+                            this.alert_text = error.response.data.error
+                            this.alert_code = error.response.data.error_code
+                            this.alert = true
+                        }
                     }
                 }
             },

@@ -378,6 +378,7 @@
     import Experiment_service from "../../services/Experiment_service"
     import ExperimentsBrowse from "./ExperimentsBrowse"
     import { GChart } from 'vue-google-charts'
+    import EventBus from "../../services/events";
 
     export default {
         components: {ExperimentsBrowse, GChart},
@@ -454,17 +455,27 @@
         }),
         methods: {
             async loadBreadCrumbs () {
+              /**
+               Get breadcrumb path for products/shops
+               */
               try {
-                const response = await ProductService.get_index_categories()
+                const response = await ProductService.get_index_categories(this.$store.state.jwt)
                 this.breadcrumbs = response.data
+                // save data to store
                 this.$store.commit('SET_INDEX_CATs', response.data)
-                console.log('done')
+
               } catch (error) {
                 if (error.response) {
-                  console.log(error.response)
+                  if(error.response.status === 401){
+                    EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                  }
                 }
               }
             },
+            /**
+             * Defined rules for count of clusters.
+             * @param value input data
+             */
             clusters_count_rules (value) {
                 if (value == null) {
                     return "Invalid value"
@@ -476,6 +487,10 @@
                     return "Invalid value"
                 }
             },
+            /**
+             * Defined rules for count of topics per cluster.
+             * @param value
+             */
             topics_per_cluster_rules (value) {
                 if (value == null) {
                     return "Invalid value"
@@ -487,16 +502,37 @@
                     return "Invalid value"
                 }
             },
-               async loadProducts (category) {
-                const response =  await ProductService.get_products(category)
-                this.products = response.data
-
+            /**
+             * Load products of category.
+             * @param category name of category
+             */
+            async loadProducts (category) {
+                try{
+                    const response =  await ProductService.get_products(category, this.$store.state.jwt)
+                    this.products = response.data
+                } catch (error) {
+                    if (error.response){
+                        // other then 2xx
+                        if(error.response.status === 401){
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                        }
+                    }
+                }
             },
-            onClusterDialogMenuClicked (category,){
+            /**
+             * Handler for opening cluster dialog
+             * @param category category object
+             */
+            onClusterDialogMenuClicked (category){
                 this.cluster_category = category
                 this.cluster_dialog_menu = true
             },
+            /**
+             * Perform similarity clustering on backend site.
+             * @returns {Promise<void>}
+             */
             async onSimilarityClicked () {
+                // configuration object that will be sent
                 const config = {
                     embedding_method: this.embedding_type_select,
                     embedding_model: this.embedding_model_select,
@@ -509,31 +545,45 @@
                 this.cluster_dialog_menu = false
 
                 try {
+                    // peek for sentences of clustering similarity
                     const response_peek = await Experiment_service.peek_sentences({
                         category: this.cluster_category
-                    })
+                    }, this.$store.state.jwt)
                     this.peek_con_cnt = response_peek.data.con.sentences_count
                     this.peek_pos_cnt = response_peek.data.pos.sentences_count
 
+                    // show loading data dialog
                     this.loading_data = true
-                    const response = await Experiment_service.cluster_sentences(config)
+                    try {
+                        // wait for clustering to be done
+                        const response = await Experiment_service.cluster_sentences(config, this.$store.state.jwt)
 
-                    var arr_pos = [['Cluster', 'sentences_count']]
-                    var arr_con = [['Cluster', 'sentences_count']]
-                    this.pos = response.data.pos
-                    this.pos.clusters.forEach(function (item) {
-                        arr_pos.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
-                    })
-                    this.chartData_pos = arr_pos
+                        // show statistics of clustering after
+                        var arr_pos = [['Cluster', 'sentences_count']]
+                        var arr_con = [['Cluster', 'sentences_count']]
+                        this.pos = response.data.pos
+                        this.pos.clusters.forEach(function (item) {
+                            arr_pos.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
+                        })
+                        this.chartData_pos = arr_pos
 
-                    this.con = response.data.con
-                    this.con.clusters.forEach(function (item) {
-                        arr_con.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
-                    })
-                    this.chartData_con = arr_con
-                    this.loading_data = false
+                        this.con = response.data.con
+                        this.con.clusters.forEach(function (item) {
+                            arr_con.push(['Cluster_'+ item.cluster_number, item.cluster_sentences_count])
+                        })
+                        this.chartData_con = arr_con
+                        this.loading_data = false
+                    } catch (error) {
+                        // handle errors
+                        if (error.response){
+                          if(error.response.status === 401){
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                          }
+                        }
+                    }
                 }
                 catch (error) {
+                    // peek sentences error handle
                     this.loading_data = false
                     if (error.response) {
                         // other then 2xx
@@ -554,38 +604,45 @@
                 this.peek_pos_cnt = 0
                 this.peek_con_cnt = 0
             },
+            /**
+             * Peek for sentences of similarity clustering.
+             * @returns {Promise<void>}
+             */
             async onPeekCount () {
                 const config = {
                     category: this.cluster_category
-                };
+                }
                 try {
+                    // close clustering dialog and wait for data
                     this.cluster_dialog_menu = false
-                    const response = await Experiment_service.peek_sentences(config)
+                    const response = await Experiment_service.peek_sentences(config, this.$store.state.jwt)
                     console.log(response.data)
                     this.con = response.data.con
                     this.pos = response.data.pos
                     this.peek_sentences_alert = true
                 }
                 catch (error) {
+                    // error handle
                     if (error.response){
-                        // other then 2xx
-                        this.alert_text = error.response.data.error
-                        this.alert_code = error.response.data.error_code
-                        this.alert = true
-                        console.log(error.response.data)
-                        console.log(error.response.status)
-                        console.log(error.response.headers)
+                        if(error.response.status === 401) {
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                        } else{
+                            this.alert_text = error.response.data.error
+                            this.alert_code = error.response.data.error_code
+                            this.alert = true
+                        }
                     }
-                    else if (error.request) {
-                        //timeout
-                        console.log(error.request);
-                    } else {
+                    else {
                         // Something happened in setting up the request and triggered an Error
                         console.log('Error', error.message);
                     }
                 }
 
             },
+            /**
+             * Cluster click handle shows sentences of cluster
+             * @param value
+             */
             onClusterClicked (value) {
                 this.cluster_dialog_data = value
                 this.cluster_items_per_page=value.sentences.length
@@ -593,6 +650,7 @@
             }
         },
           beforeMount () {
+            // load breadcrumbs from store
             if (this.$store.state.index_categories[0]) {
               console.log('store')
               this.breadcrumbs = this.$store.state.index_categories
@@ -603,22 +661,30 @@
             }
           },
         computed: {
-          filter () {
-            return this.caseSensitive
-              ? (item, search, textKey) => item[textKey].indexOf(search) > -1
-              : undefined
-          },
-          selected () {
-            const name = this.active[0]
-            if(name == null) return undefined
-            var l = name.split(' ')
-            this.loadProducts(name)
+            /**
+             * Filter for breadcrumbs
+             * @returns {*}
+             */
+            filter () {
+                return this.caseSensitive
+                  ? (item, search, textKey) => item[textKey].indexOf(search) > -1
+                  : undefined
+              },
+            /**
+             * Select
+             * @returns {{name: *}|undefined}
+             */
+            selected () {
+                 const name = this.active[0]
+                 if(name == null) return undefined
+                 var l = name.split(' ')
+                 this.loadProducts(name)
 
-            var o = {
-                name: l[0]
-            }
-            return o
-          },
+                 var o = {
+                     name: l[0]
+                 }
+                 return o
+            },
         }
     }
 </script>

@@ -130,6 +130,7 @@
 <script>
 import ProductService from "../services/ProductService";
 import GenerateDataService from "../services/GenerateDataService"
+import EventBus from "../services/events";
 
 export default {
   data: () => ({
@@ -165,105 +166,127 @@ export default {
      max_sentence_len: 24,
 
   }),
-  methods: {
-    async loadBreadCrumbs () {
-      try {
-        const response = await ProductService.get_index_categories()
-        this.breadcrumbs = response.data
-        this.$store.commit('SET_INDEX_CATs', response.data)
-        console.log('done')
-      } catch (error) {
-        if (error.response) {
-          console.log(error.response)
-        }
-      }
-    },
-    async reloadBreadCrumbs () {
-      console.log('Reload')
-      this.$store.commit('REM_INDEX_CATs')
-      this.loadBreadCrumbs()
-    },
-      min_sentence_rules (value ){
-        if (value == null) {
-            return "Invalid value"
-        }
-        else if (value > 1 && value < this.max_sentence_len){
-            return true
-        }
-        else if (value >= this.max_sentence_len){
-            return "Must be lower than maximum"
-        }
-        else {
-            return "Invalid value"
-        }
-      },
-      max_sentence_rules (value ){
-        value = Number(value)
-        if (value == null) {
-            return "Invalid value"
-        }
-        else if (value > this.min_sentence_len && value < 128){
-            return true
-        }
-        else {
-            return "Invalid value, max: 128"
-        }
-      },
-      async onGenerateDatasetClicked () {
-        const config = {
-            task_type: this.task_type_select,
-            model_type: this.model_type_select,
-            sentence_type: this.sentence_type_select,
-            equal: this.equal_checkbox,
-            sentence_min_len: Number(this.min_sentence_len),
-            sentence_max_len: Number(this.max_sentence_len),
-            categories: this.categories
-        }
-        console.log(config)
-        this.loading_data = true
-        try {
-            const response = await GenerateDataService.generate_dataset(config)
-            var fileURL = window.URL.createObjectURL(new Blob([response.data]))
-            var fileLink = document.createElement('a');
-            fileLink.href = fileURL;
-            fileLink.setAttribute('download', 'data.zip');
-            document.body.appendChild(fileLink);
-            fileLink.click();
-            this.loading_data = false
-        }
-        catch (error) {
-            this.loading_data = false
-            if (error.response){
-                // other then 2xx
-                const reader = new FileReader()
-                const text = reader.readAsText(error.response.data)
-                console.log(text)
-                this.alert_text = text
-                this.alert_code = error.response.status
-                this.alert = true
-                console.log(error.response.data)
-                console.log(error.response.status)
-                console.log(error.response.headers)
+    methods: {
+        /**
+        * Get breadcrumbs from API
+        * @returns {Promise<void>}
+        */
+        async loadBreadCrumbs () {
+           try {
+               const response = await ProductService.get_index_categories(this.$store.state.jwt)
+               this.breadcrumbs = response.data
+               this.$store.commit('SET_INDEX_CATs', response.data)
+           } catch (error) {
+                if (error.response) {
+                    if(error.response.status === 401){
+                        EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                    }
+                }
             }
-            else if (error.request) {
-                //timeout
-                console.log(error.request);
-            } else {
-                // Something happened in setting up the request and triggered an Error
-                console.log('Error', error.message);
+        },
+        /**
+        * Reload breadcrumbs product path.
+        * @returns {Promise<void>}
+        */
+        async reloadBreadCrumbs () {
+           this.$store.commit('REM_INDEX_CATs')
+           await this.loadBreadCrumbs()
+        },
+        /**
+         * Rules for minimum length of sentence.
+         * @param value text
+         * @returns {string|boolean}
+         */
+        min_sentence_rules (value ){
+            if (value == null) {
+                return "Invalid value"
+            }
+            else if (value > 1 && value < this.max_sentence_len){
+                return true
+            }
+            else if (value >= this.max_sentence_len){
+                return "Must be lower than maximum"
+            }
+            else {
+                return "Invalid value"
+            }
+          },
+        /**
+         * Rules for maximum length of sentence.
+         * @param value text
+         * @returns {string|boolean}
+         */
+        max_sentence_rules (value ){
+            value = Number(value)
+            if (value == null) {
+                return "Invalid value"
+            }
+            else if (value > this.min_sentence_len && value < 128){
+                return true
+            }
+            else {
+                return "Invalid value, max: 128"
+            }
+        },
+        /**
+         * Perform dataset generation on backend site, safe generated data as zip file.
+         * @returns {Promise<void>}
+         */
+        async onGenerateDatasetClicked () {
+            //object that will be sent to API
+            const config = {
+                task_type: this.task_type_select,
+                model_type: this.model_type_select,
+                sentence_type: this.sentence_type_select,
+                equal: this.equal_checkbox,
+                sentence_min_len: Number(this.min_sentence_len),
+                sentence_max_len: Number(this.max_sentence_len),
+                categories: this.categories
+            }
+            // start loading dialog
+            this.loading_data = true
+            // routine
+            try {
+                // send request and save generated file
+                const response = await GenerateDataService.generate_dataset(config, this.$store.state.jwt)
+                // save incoming blob
+                var fileURL = window.URL.createObjectURL(new Blob([response.data]))
+                var fileLink = document.createElement('a');
+                fileLink.href = fileURL;
+                fileLink.setAttribute('download', 'data.zip');
+                document.body.appendChild(fileLink);
+                // download file
+                fileLink.click();
+                this.loading_data = false
+            }
+            catch (error) {
+                // close loading dialog
+                this.loading_data = false
+                // error handle
+                if (error.response){
+                    // if there is an error
+                    const reader = new FileReader()
+                    const text = reader.readAsText(error.response.data)
+                    this.alert_text = text
+                    this.alert_code = error.response.status
+                    this.alert = true
+                }
+                else {
+                    // Something happened in setting up the request and triggered an Error
+                    console.log('Error', error.message);
+                }
             }
         }
-      }
-  },
-  beforeMount () {
-    if (this.$store.state.index_categories[0]) {
-      console.log('store')
-      this.breadcrumbs = this.$store.state.index_categories
-      console.log(this.breadcrumbs)
-    } else {
-      console.log('loadBreadCrumbs')
-      this.loadBreadCrumbs()
+    },
+    /**
+     * Reload breadcrumbs from storage or load new from api
+     */
+    beforeMount () {
+        if (this.$store.state.index_categories[0]) {
+            this.breadcrumbs = this.$store.state.index_categories
+        } else {
+            this.loadBreadCrumbs()
+        }
     }
-  }
 }
 </script>

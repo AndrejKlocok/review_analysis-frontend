@@ -161,6 +161,7 @@
     import Experiment_service from "../../services/Experiment_service";
     import ExperimentClusterView from "../cluster_experiments/ExperimentClusterView";
     import {GChart} from "vue-google-charts";
+    import EventBus from "../../services/events";
 
     export default {
         components: {ExperimentClusterView, ProductBrowse, GChart},
@@ -179,17 +180,35 @@
             }
           },
         methods: {
+            /**
+             * Get url of products image from API on heureka site
+             * @returns {Promise<void>}
+             */
             async getProductImage (){
+                // image is not available for shops
                 if (this.product.domain ==='shop'){
                     return
                 }
                 const config = {
                         url: this.product.url
                     }
-
-                const response = await ProductService.get_image(config)
-                this.image_link = response.data.src
+                try{
+                    // get image request
+                    const response = await ProductService.get_image(config, this.$store.state.jwt)
+                    this.image_link = response.data.src
+                } catch (error) {
+                    // error handle
+                    if (error.response) {
+                        if (error.response.status === 401) {
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                        }
+                    }
+                }
             },
+            /**
+             * Get clustering experiment sentences from clustering category or of the product
+             * @returns {Promise<void>}
+             */
             async getExperimentSentences(){
                 const config = {}
 
@@ -210,17 +229,24 @@
                             clusters:[]
                         }
                     }
-                    const response = await Experiment_service.get_experiment_sentences(config)
-                    console.log(response.data)
+                    // perform request and save data
+                    const response = await Experiment_service.get_experiment_sentences(config, this.$store.state.jwt)
+
                     this.experiment = response.data
                     this.experiment.category = this.category
                 }
                 catch (error) {
+                    // error handle
                     if (error.response){
-                        // other then 2xx
-                        console.log(error.response.data)
-                        console.log(error.response.status)
-                        console.log(error.response.headers)
+                        if(error.response.status === 401){
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                        }
+                        else {
+                            // other then 2xx
+                            console.log(error.response.data)
+                            console.log(error.response.status)
+                            console.log(error.response.headers)
+                        }
                     }
                     else if (error.request) {
                         //timeout
@@ -231,17 +257,24 @@
                     }
                 }
             },
+            /**
+             * Get product statistics from backend API
+             * @returns {Promise<void>}
+             */
             async getStatistics(){
-              const config = {
-                  domain: this.product.domain,
-                  name: this.product.product_name
-              }
-              if (this.product.domain === "shop"){
-                  config.name = this.product.name
-              }
-              try {
-                    const response = await ProductService.get_statistics(config)
-                    console.log(response.data)
+                // object that will be sent \
+                const config = {
+                    domain: this.product.domain,
+                    name: this.product.product_name
+                }
+                // shop name has different property
+                if (this.product.domain === "shop"){
+                    config.name = this.product.name
+                }
+                try {
+                    // send request to api
+                    const response = await ProductService.get_statistics(config, this.$store.state.jwt)
+                    // gather statistics and graph
                     this.avg_rev = response.data.avg_rating
                     this.avg_rec = response.data.avg_recommends
                     var chart_data = [['Time', 'reviews']]
@@ -251,14 +284,13 @@
                     this.chart_data = chart_data
                 }
                 catch (error) {
+                    // error handle
                     if (error.response){
-                        // other then 2xx
                         console.log(error.response.data)
                         console.log(error.response.status)
                         console.log(error.response.headers)
                     }
                     else if (error.request) {
-                        //timeout
                         console.log(error.request);
                     } else {
                         // Something happened in setting up the request and triggered an Error
@@ -267,6 +299,9 @@
                 }
 
             },
+            /**
+             * Open product/shop on heureka page.
+             */
             openHeureka (){
                 if(this.product.domain === 'shop'){
                     window.open(this.product.url_review, "_blank")
@@ -275,14 +310,23 @@
                     window.open(this.product.url, "_blank")
                 }
             },
+            /**
+             * Open window to shop page
+             */
             openShopPage (){
                 window.open(this.product.url_shop, "_blank")
             },
+            /**
+             * Open product reviews
+             */
             onSeeReviewsBtnClicked() {
                 this.$router.push({name: 'review_view', params: {product: this.product}})
             }
         },
         beforeMount () {
+            /**
+             * Load saved product
+             */
             if (this.$route.params.product) {
                 this.product = this.$route.params.product
                 console.log('route')
@@ -295,6 +339,9 @@
                 this.$router.push({name: 'product_tree_view'})
                 return
             }
+            /**
+             * Get data
+             */
             this.getProductImage()
             this.getStatistics()
             this.getExperimentSentences()

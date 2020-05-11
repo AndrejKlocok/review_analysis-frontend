@@ -85,6 +85,10 @@ export default {
         }
     },
     methods: {
+        /**
+         * Perform login task to get JWT authorization token
+         * @returns {Promise<void>}
+         */
         async login () {
             try{
                 const config = {
@@ -92,40 +96,35 @@ export default {
                     password: this.password
                 }
                 const response = await UserService.login(config)
-                console.log(response.data)
                 const jwt_token = response.data.token
                 const user = response.data.user
+                // save token to storage
                 this.$store.commit('SET_USER_DATA', user)
                 this.$store.commit('SET_JWT_TOKEN', jwt_token)
                 EventBus.$emit('USER_LOGGED', user)
-                this.$router.push({name: 'user_home'})
+                await this.$router.push({name: 'user_home'})
             }
             catch (error) {
+                // error handle
                 if (error.response){
                     // other then 2xx
                     this.alert_text = error.response.data.error
                     this.alert_code = error.response.data.error_code
                     this.alert = true
-                    console.log(error.response.data)
-                    console.log(error.response.status)
-                    console.log(error.response.headers)
                 }
-                else if (error.request) {
-                    //timeout
-                    console.log(error.request);
-                } else {
+                else {
                     // Something happened in setting up the request and triggered an Error
                     console.log('Error', error.message);
                 }
             }
-            //this.$store.dispatch('login', { name: this.name, password: this.password })
-            //    .then(() => this.$router.push('/'))
         },
         register () {
-
         }
     },
     mounted () {
+        /**
+         * Event handlers
+         */
         EventBus.$on('loginFailed', (msg) => {
             this.alert_text = msg
             this.alert = true

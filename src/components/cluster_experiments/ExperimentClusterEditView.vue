@@ -680,56 +680,73 @@
             help_cluster: false,
         }),
         methods: {
+            /**
+             * Shows cluster dialog
+             * @param type type of cluster
+             */
             onCreateClusterDialogClicked (type) {
-                    this.cluster_name = ''
-                    this.cluster_topics = []
-                    this.cluster_type_select = type
-                    this.create_cluster_dialog = true
-                },
-                async onCreateClusterClicked () {
-                        var cluster_number = this.experiment.pos.clusters.length + 1
-                        if (this.cluster_type_select === 'con') {
-                            cluster_number = this.experiment.con.clusters.length + 1
+                this.cluster_name = ''
+                this.cluster_topics = []
+                this.cluster_type_select = type
+                this.create_cluster_dialog = true
+            },
+            /**
+             * Shows create cluster dialog
+             * @returns {Promise<void>}
+             */
+            async onCreateClusterClicked () {
+                var cluster_number = this.experiment.pos.clusters.length + 1
+                if (this.cluster_type_select === 'con') {
+                    cluster_number = this.experiment.con.clusters.length + 1
+                }
+                // object that will be sent over to backend
+                const req = {
+                    experiment_id:this.experiment._id,
+                    cluster_number: cluster_number,
+                    type: this.cluster_type_select,
+                    cluster_name: this.cluster_name,
+                    topics: this.cluster_topics,
+                }
+
+                try {
+                    // send data and close dialog
+                    await Experiment_service.create_cluster(req, this.$store.state.jwt)
+                    await this.getExperimentSentences()
+                    this.create_cluster_dialog=false
+                }
+                catch (error) {
+                    // error handle
+                    if (error.response) {
+                        if(error.response.status === 401){
+                          EventBus.$emit('USER_LOGGED_OUT', error.response.data)
                         }
-                        const req = {
-                            experiment_id:this.experiment._id,
-                            cluster_number: cluster_number,
-                            type: this.cluster_type_select,
-                            cluster_name: this.cluster_name,
-                            topics: this.cluster_topics,
+                        else{
+                            this.alert_text = error.response.data.error
+                            this.alert_code = error.response.data.error_code
+                            this.alert = true
                         }
 
-                        try {
-                            const response = await Experiment_service.create_cluster(req)
-                            console.log(response.data)
-                            this.getExperimentSentences()
-                            this.create_cluster_dialog=false
-                        }
-                        catch (error) {
-                            if (error.response) {
-                                // other then 2xx
-                                this.alert_text = error.response.data.error
-                                this.alert_code = error.response.data.error_code
-                                this.alert = true
-                                console.log(error.response.data)
-                                console.log(error.response.status)
-                                console.log(error.response.headers)
-                            } else if (error.request) {
-                                //timeout
-                                console.log(error.request);
-                            } else {
-                                // Something happened in setting up the request and triggered an Error
-                                console.log('Error', error.message);
-                            }
-                        }
-                },
-            addClusterTopic(){
-              if (this.topic_name) {
-                 this.cluster_topics.push(this.topic_name)
-              this.topic_name = ''
-              }
+                    } else {
+                        // Something happened in setting up the request and triggered an Error
+                        console.log('Error', error.message);
+                    }
+                }
             },
+            /**
+             * Add topic to cluster handle
+             */
+            addClusterTopic(){
+                if (this.topic_name) {
+                    this.cluster_topics.push(this.topic_name)
+                    this.topic_name = ''
+                }
+            },
+            /**
+             * Append topics to cluster
+             * @returns {Promise<void>}
+             */
             async onClusterSaveTopicsClicked() {
+                // object to be sent over to backend
                 const req = {
                     cluster_number: this.cluster_edit_data._id,
                     experiment_id: this.experiment._id,
@@ -737,36 +754,41 @@
                 }
 
                 try {
-                    const response = await Experiment_service.update_topics(req)
+                    // send request and after response close dialog
+                    const response = await Experiment_service.update_topics(req, this.$store.state.jwt)
                     console.log(response.data)
-                    this.getExperimentSentences()
+                    await this.getExperimentSentences()
                     this.cluster_edit_dialog = false
                 }
                 catch (error) {
+                    // error handle
                     this.cluster_edit_dialog = false
                     if (error.response) {
-                        // other then 2xx
-                        this.alert_text = error.response.data.error
-                        this.alert_code = error.response.data.error_code
-                        this.alert = true
-                        console.log(error.response.data)
-                        console.log(error.response.status)
-                        console.log(error.response.headers)
-                    } else if (error.request) {
-                        //timeout
-                        console.log(error.request);
+                        if(error.response.status === 401){
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                        } else {
+                            this.alert_text = error.response.data.error
+                            this.alert_code = error.response.data.error_code
+                            this.alert = true
+                        }
                     } else {
                         // Something happened in setting up the request and triggered an Error
                         console.log('Error', error.message);
                     }
                 }
             },
+            /**
+             * Shows topics sentences dialog.
+             * @param cluster
+             * @param topic
+             */
             onTopicClicked (cluster, topic) {
                 this.cluster_topic_data = topic
                 this.cluster_topic_name = topic.name
                 this.cluster_edit_data = cluster
 
                 const sentences = []
+                // loop for sentences
                 try {
                     cluster.sentences.forEach(function (item) {
                         if (item.topic_id === topic._id) {
@@ -777,27 +799,38 @@
                 catch (e) {
                     console.log('Empty topic')
                 }
-
+                // show dialog with data
                 this.cluster_dialog_data_sentences = sentences
                 this.cluster_items_per_page=sentences.length
                 this.cluster_dialog = true
             },
+            /**
+             * Show cluster edit dialog.
+             * @param value cluster object
+             */
             onClusterEdit(value) {
-                console.log(value)
                 this.cluster_edit_data = value
                 this.cluster_topics = []
 
                 this.merge_cluster_items = []
+                // set type of cluster
                 if (value['type'] === "pos") {
                     this.merge_cluster_items = this.experiment.pos.clusters
                 }
                 else {
                     this.merge_cluster_items = this.experiment.con.clusters
                 }
-
+                // show dialog
                 this.cluster_edit_dialog = true
             },
+            /**
+             * Shows topic edit dialog.
+             * @param cluster topics cluster
+             * @param topic topic object
+             * @param index index of topic
+             */
             onClusterTopicEdit(cluster, topic, index) {
+                // set up data
                 this.cluster_topic_name = topic.name
                 this.cluster_topic_data = topic
                 this.cluster_topic_index = index
@@ -810,18 +843,23 @@
                 else {
                     this.merge_cluster_items = this.experiment.con.clusters
                 }
-
+                // show dialog
                 this.cluster_topic_edit_valid = true
             },
+            /**
+             * Shows edit sentence dialog, that consists of table of sentences
+             * @param cluster cluster object
+             */
             onSentencesEdit(cluster) {
                 this.cluster_edit_data = cluster
                 this.cluster_items_per_page = cluster.sentences.length
                 this.cluster_sentences_edit = true
-
-                console.log(cluster)
             },
+            /**
+             * Shows dialog for sentence merge
+             * @param sentence
+             */
             onSentenceMergeDialogClicked(sentence) {
-              console.log(sentence)
               this.sentence_merge_data = sentence
 
                 this.merge_cluster_items = []
@@ -834,99 +872,114 @@
 
               this.sentence_merge_dialog = true
             },
+            /**
+             * Perform sentence merge on back-end
+             * @returns {Promise<void>}
+             */
             async onSentenceMerge() {
+                // object to be sent
                 const req = {
                     sentence_id: this.sentence_merge_data._id,
                     cluster_id: this.merge_cluster_selected._id,
                     topic_number: this.merge_topic_selected.topic_number,
                     topic_id: this.merge_topic_selected._id
                  }
-                console.log(req)
+                 // send request to API
                 try {
-                    await Experiment_service.update_sentence(req)
-                    this.getExperimentSentences()
+                    await Experiment_service.update_sentence(req, this.$store.state.jwt)
+                    await this.getExperimentSentences()
                 }
                 catch (error) {
+                    // error handle
                     if (error.response){
-                        // other then 2xx
-                        this.alert_text = error.response.data.error
-                        this.alert_code = error.response.data.error_code
-                        this.alert = true
-                        console.log(error.response.data)
-                        console.log(error.response.status)
-                        console.log(error.response.headers)
+                        if(error.response.status === 401){
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                        }
+                        else {
+                           this.alert_text = error.response.data.error
+                            this.alert_code = error.response.data.error_code
+                            this.alert = true
+                        }
                     }
-                    else if (error.request) {
-                        //timeout
-                        console.log(error.request);
-                    } else {
+                    else {
                         // Something happened in setting up the request and triggered an Error
                         console.log('Error', error.message);
                     }
                 }
-
+                // close dialogs
                 this.sentence_merge_dialog = false
                 this.cluster_sentences_edit = false
             },
+            /**
+             * Show help dialog.
+             */
             onHelpClicked () {
                 this.help_cluster = true
             },
+            /**
+             * Perform cluster save on
+             * @returns {Promise<void>}
+             */
             async onClusterSaveClicked() {
-                console.log(this.cluster_edit_data)
+                // object to be sent to API
                 const req = {
                     cluster_id: this.cluster_edit_data._id,
                     cluster_name: this.cluster_edit_data.cluster_name,
                     category: this.experiment.category
                  }
-
+                // perform request
                 try {
-                    await Experiment_service.update_cluster_name(req)
-                    this.getExperimentSentences()
+                    await Experiment_service.update_cluster_name(req, this.$store.state.jwt)
+                    await this.getExperimentSentences()
                 }
                 catch (error) {
+                    // error handle
                     if (error.response){
-                        // other then 2xx
-                        this.alert_text = error.response.data.error
-                        this.alert_code = error.response.data.error_code
-                        this.alert = true
-                        console.log(error.response.data)
-                        console.log(error.response.status)
-                        console.log(error.response.headers)
+                        if(error.response.status === 401){
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                        }
+                        else{
+                            this.alert_text = error.response.data.error
+                            this.alert_code = error.response.data.error_code
+                            this.alert = true
+                        }
+
                     }
-                    else if (error.request) {
-                        //timeout
-                        console.log(error.request);
-                    } else {
+                    else {
                         // Something happened in setting up the request and triggered an Error
                         console.log('Error', error.message);
                     }
                 }
-
+                // close dialog
                 this.cluster_edit_dialog = false
             },
+            /**
+             * Perform an update of topic name.
+             * @returns {Promise<void>}
+             */
             async onSaveClusterTopicClicked() {
+                // object to be sent to API
                 const config = {
                     topic_id: this.cluster_topic_data._id,
                     topic_name: this.cluster_topic_name
                 }
+                // send request to API
                 try {
-                    await Experiment_service.update_topic_name(config)
-                    this.getExperimentSentences()
+                    await Experiment_service.update_topic_name(config, this.$store.state.jwt)
+                    await this.getExperimentSentences()
                 }
                 catch (error) {
+                    // error handle
                     if (error.response){
-                        // other then 2xx
-                        this.alert_text = error.response.data.error
-                        this.alert_code = error.response.data.error_code
-                        this.alert = true
-                        console.log(error.response.data)
-                        console.log(error.response.status)
-                        console.log(error.response.headers)
+                        if(error.response.status === 401){
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                        } else {
+                            this.alert_text = error.response.data.error
+                            this.alert_code = error.response.data.error_code
+                            this.alert = true
+                        }
                     }
-                    else if (error.request) {
-                        //timeout
-                        console.log(error.request);
-                    } else {
+                    else {
                         // Something happened in setting up the request and triggered an Error
                         console.log('Error', error.message);
                     }
@@ -934,8 +987,12 @@
 
                 this.cluster_topic_edit_valid = false
             },
+            /**
+             * Perform topic merge on backend
+             * @returns {Promise<void>}
+             */
             async onClusterTopicMergeClicked() {
-
+                // object to be sent to API
                 const config = {
                     cluster_from_id: this.cluster_edit_data._id,
                     cluster_to_id: this.merge_cluster_selected._id,
@@ -944,33 +1001,40 @@
                     topic_to_id: this.merge_topic_selected._id,
                     topic_from_id: this.cluster_topic_data._id,
                 }
-
+                // Perform request
                 try {
-                    console.log(config)
-                    await Experiment_service.merge_topic(config)
+                    await Experiment_service.merge_topic(config, this.$store.state.jwt)
                     this.cluster_topic_edit_valid = false
-                    this.getExperimentSentences()
+                    // download all sentences from experiment
+                    await this.getExperimentSentences()
                 }
                 catch (error) {
-                    this.cluster_topic_edit_valid = false``
+                    // error handle
+                    //close dialog
+                    this.cluster_topic_edit_valid = false
                     if (error.response) {
-                        // other then 2xx
-                        this.alert_text = error.response.data.error
-                        this.alert_code = error.response.data.error_code
-                        this.alert = true
-                        console.log(error.response.data)
-                        console.log(error.response.status)
-                        console.log(error.response.headers)
-                    } else if (error.request) {
-                        //timeout
-                        console.log(error.request);
-                    } else {
+                        if(error.response.status === 401){
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                        }
+                        else {
+                            this.alert_text = error.response.data.error
+                            this.alert_code = error.response.data.error_code
+                            this.alert = true
+                        }
+
+                    }
+                    else {
                         // Something happened in setting up the request and triggered an Error
                         console.log('Error', error.message);
                     }
                 }
             },
+            /**
+             *
+             * @returns {Promise<void>}
+             */
             async onClusterMergeClicked () {
+                // object to be sent to API
                 const config = {
                     cluster_from: {
                         _id: this.cluster_edit_data['_id'],
@@ -989,33 +1053,39 @@
                         experiment_id: this.cluster_edit_data['experiment_id'],
                     }
                 }
-
+                // perform request to API
                 try {
-                    console.log(config)
-                    await Experiment_service.cluster_merge(config)
+                    await Experiment_service.cluster_merge(config, this.$store.state.jwt)
+                    // close dialog
                     this.cluster_edit_dialog = false
-                    this.getExperimentSentences()
+                    // get all sentences from experiment
+                    await this.getExperimentSentences()
                 }
                 catch (error) {
+                    // error handle
+                    // close dialog
                     this.cluster_edit_dialog = false
                     if (error.response){
-                        // other then 2xx
-                        this.alert_text = error.response.data.error
-                        this.alert_code = error.response.data.error_code
-                        this.alert = true
-                        console.log(error.response.data)
-                        console.log(error.response.status)
-                        console.log(error.response.headers)
+                        if(error.response.status === 401) {
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                        }
+                        else{
+                            this.alert_text = error.response.data.error
+                            this.alert_code = error.response.data.error_code
+                            this.alert = true
+                        }
                     }
-                    else if (error.request) {
-                        //timeout
-                        console.log(error.request);
-                    } else {
+                    else {
                         // Something happened in setting up the request and triggered an Error
                         console.log('Error', error.message);
                     }
                 }
             },
+            /**
+             * Rules for merge luster
+             * @param item
+             * @returns {string|boolean}
+             */
             clusters_merge_rules(item) {
                 if (item == null) {
                     return "Invalid value"
@@ -1027,6 +1097,11 @@
                     return true
                 }
             },
+            /**
+             * Rules for topic count per cluster
+             * @param item
+             * @returns {string|boolean}
+             */
             clusters_topic_rules(item) {
                 if (item == null) {
                     return "Invalid value"
@@ -1038,8 +1113,12 @@
                     return true
                 }
             },
+            /**
+             * Rules for topic name
+             * @param item
+             * @returns {string|boolean}
+             */
             topic_name_rules(item){
-
                 if (item == null) {
                     return "Invalid value"
                 }
@@ -1050,27 +1129,47 @@
                     return true
                 }
             },
+            /**
+             * Get sentences from experiment by making a request to API
+             * @returns {Promise<void>}
+             */
             async getExperimentSentences(){
-                console.log(this.category)
+                // object to be send over to API
                 const config = {
                     category: this.category
                 }
-                const response = await Experiment_service.get_experiment_sentences(config)
-                this.experiment = response.data
-                console.log(response.data)
-                this.experiment.category = this.category
-                var arr_pos = [['Cluster', 'sentences_count']]
-                var arr_con = [['Cluster', 'sentences_count']]
-                this.experiment.pos.clusters.forEach(function (item) {
-                    arr_pos.push([item.cluster_name, item.cluster_sentences_count])
-                })
-                this.experiment.chartData_pos = arr_pos
+                try {
+                    // make request
+                    const response = await Experiment_service.get_experiment_sentences(config, this.$store.state.jwt)
+                    // set the data
+                    this.experiment = response.data
+                    this.experiment.category = this.category
+                    // graph data
+                    var arr_pos = [['Cluster', 'sentences_count']]
+                    var arr_con = [['Cluster', 'sentences_count']]
 
-                this.experiment.con.clusters.forEach(function (item) {
-                    arr_con.push([item.cluster_name, item.cluster_sentences_count])
-                })
-                this.experiment.chartData_con = arr_con
-                },
+                    this.experiment.pos.clusters.forEach(function (item) {
+                        arr_pos.push([item.cluster_name, item.cluster_sentences_count])
+                    })
+                    this.experiment.chartData_pos = arr_pos
+
+                    this.experiment.con.clusters.forEach(function (item) {
+                        arr_con.push([item.cluster_name, item.cluster_sentences_count])
+                    })
+                    this.experiment.chartData_con = arr_con
+                } catch (error) {
+                    // error handle
+                    if (error.response) {
+                        if (error.response.status === 401) {
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                        }
+                    }
+                }
+            },
+            /**
+             * Reload experiment sentences with given category name
+             * @param value category name
+             */
             reloadCategoryExperiment(value){
                 this.category = value
                 this.getExperimentSentences()

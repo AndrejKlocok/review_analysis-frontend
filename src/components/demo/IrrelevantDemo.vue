@@ -51,6 +51,7 @@
 <script>
     import DemoBrowse from "./DemoBrowse"
     import Experiment_service from "../../services/Experiment_service"
+    import EventBus from "../../services/events";
     export default {
         components: {DemoBrowse},
         data: () => ({
@@ -63,21 +64,29 @@
             valid: false,
         }),
         methods:{
+            /**
+             * Perform api request on sentence/text relevant state.
+             * @returns {Promise<void>}
+             */
             async onCheckSentence () {
+                // data to be sent over to API
                 const data = {
                     text: this.text
                 }
                 try {
-                    console.log(data)
-                    const response = await Experiment_service.check_irrelevant(data)
-                    console.log(response.data)
+                    // perform request and set up data
+                    const response = await Experiment_service.check_irrelevant(data, this.$store.state.jwt)
                     this.irrelevant_label = response.data.label
                 } catch (error) {
+                    // error handle
                     if (error.response){
-                        // other then 2xx
-                        this.alert_text = error.response.data.error
-                        this.alert_code = error.response.data.error_code
-                        this.alert = true
+                        if(error.response.status === 401){
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                        } else {
+                            this.alert_text = error.response.data.error
+                            this.alert_code = error.response.data.error_code
+                            this.alert = true
+                        }
                     }
                 }
             },

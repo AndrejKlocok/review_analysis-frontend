@@ -31,11 +31,11 @@ export default {
         }
     },
     methods: {
+        /**
+         * Logout handle
+         */
         logout () {
-            this.$store.commit('REM_USER_DATA')
-            this.$store.commit('REM_JWT_TOKEN')
-            EventBus.$emit('USER_LOGGED_OUT')
-            this.$router.push({name: 'main'})
+            EventBus.$emit('USER_LOGGED_OUT', null)
         }
     },
 

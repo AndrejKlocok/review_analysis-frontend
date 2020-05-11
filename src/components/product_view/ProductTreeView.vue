@@ -154,6 +154,7 @@ import ProductBrowse from "./ProductBrowse";
 import ProductService from "../../services/ProductService";
 import Experiment_service from "../../services/Experiment_service";
 import ExperimentClusterView from "../cluster_experiments/ExperimentClusterView";
+import EventBus from "../../services/events";
 
 export default {
     components: {ProductBrowse, ExperimentClusterView},
@@ -185,41 +186,82 @@ export default {
     alert_code: 200,
   }),
   methods: {
-    search_product_clear() {
-      this.search_product = ''
-    },
-    async loadBreadCrumbs () {
-      try {
-        const response = await ProductService.get_index_categories()
-        this.breadcrumbs = response.data
-        this.$store.commit('SET_INDEX_CATs', response.data)
-        console.log('done')
-      } catch (error) {
-        if (error.response) {
-          console.log(error.response)
+      /**
+       * Clear product search.
+       */
+        search_product_clear() {
+            this.search_product = ''
+        },
+        /**
+          * Get product breadcrubms from api.
+          * @returns {Promise<void>}
+          */
+        async loadBreadCrumbs () {
+              try {
+                  // perform request
+                  const response = await ProductService.get_index_categories(this.$store.state.jwt)
+                  this.breadcrumbs = response.data
+                  // save breadcrumbs to store
+                  this.$store.commit('SET_INDEX_CATs', response.data)
+              } catch (error) {
+                  // error handle
+                  if (error.response) {
+                      if(error.response.status === 401){
+                          // unauthorized
+                          EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                      }
+                  }
+              }
+        },
+      /**
+       * Get all products for category with at least 10 reviews.
+       * @param category category name
+       * @returns {Promise<void>}
+       */
+      async loadProducts (category) {
+        try {
+            // perform request on backend site
+            const response =  await ProductService.get_products(category, this.$store.state.jwt)
+            this.products = response.data
+        } catch (error) {
+            // error handle
+            if (error.response){
+                if(error.response.status === 401){
+                  EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                }
+            }
         }
-      }
-    },
-       async loadProducts (category) {
-        const response =  await ProductService.get_products(category)
-        this.products = response.data
-        console.log(response.data)
 
     },
-    async reloadBreadCrumbs () {
-      console.log('Reload')
-      this.$store.commit('REM_INDEX_CATs')
-      this.loadBreadCrumbs()
-    },
+      /**
+       * Reload breadcrumbs
+       * @returns {Promise<void>}
+       */
+        async reloadBreadCrumbs () {
+            this.$store.commit('REM_INDEX_CATs')
+            await this.loadBreadCrumbs()
+        },
+      /**
+       * On product click, save object to store and push to products view
+       * @param product
+       */
       onProductClicked (product){
           this.$store.commit('SET_CLICKED_PRODUCT', product)
           this.$router.push({name: 'product_view', params: {product: product}})
       },
+      /**
+       * Get experiment details for selected category
+       */
       getExperiment(){
         this.getExperimentSentences(this.active[0])
       },
+      /**
+       * Get experiment sentences for selected category
+       * @param category selected category name
+       * @returns {Promise<void>}
+       */
       async getExperimentSentences(category){
-
+        // object to be sent to API
         const config = {
             category: category
         }
@@ -232,35 +274,35 @@ export default {
                     clusters:[]
                 }
             }
-
-            const response = await Experiment_service.get_experiment_sentences(config)
-            console.log(response.data)
+            // send request
+            const response = await Experiment_service.get_experiment_sentences(config, this.$store.state.jwt)
+            // set data and close dialog
             this.experiment = response.data
             this.experiment.category = this.category
             this.cluster_dialog = true
         }
         catch (error) {
+            // error handle
             if (error.response){
-                // other then 2xx
-                this.alert_text = error.response.data.error
-                this.alert_code = error.response.data.error_code
-                this.alert = true
-                console.log(error.response.data)
-                console.log(error.response.status)
-                console.log(error.response.headers)
+                if(error.response.status === 401){
+                    EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                } else {
+                    this.alert_text = error.response.data.error
+                    this.alert_code = error.response.data.error_code
+                    this.alert = true
+                }
             }
-            else if (error.request) {
-                //timeout
-                console.log(error.request);
-            } else {
+            else {
                 // Something happened in setting up the request and triggered an Error
                 console.log('Error', error.message);
             }
         }
-        },
-
+      },
   },
   beforeMount () {
+   /**
+    * Load breadcrumbs from storage or through api
+    */
     if (this.$store.state.index_categories[0]) {
       console.log('store')
       this.breadcrumbs = this.$store.state.index_categories
@@ -270,32 +312,44 @@ export default {
     }
   },
     computed: {
-      filter () {
-        return this.caseSensitive
-          ? (item, search, textKey) => item[textKey].indexOf(search) > -1
-          : undefined
-      },
-      selected () {
-        const name = this.active[0]
-        if(name == null) return undefined
-        var l = name.split(' ')
-        this.loadProducts(name)
+        /**
+         * Filter products according to search string
+         * @returns {*}
+         */
+          filter () {
+            return this.caseSensitive
+              ? (item, search, textKey) => item[textKey].indexOf(search) > -1
+              : undefined
+          },
+          /**
+           * Select category for products and load them
+           * @returns {{name: *}|undefined}
+           */
+          selected () {
+            const name = this.active[0]
+            if(name == null) return undefined
+            var l = name.split(' ')
+            this.loadProducts(name)
 
-        var o = {
-            name: l[0]
-        }
-        return o
-      },
-      products_filtered () {
-          if (this.search_product===null){
-              return this.products.products
+            var o = {
+                name: l[0]
+            }
+            return o
+          },
+         /**
+          * Search filter for products
+          * @returns {[]|*[]}
+          */
+          products_filtered () {
+              if (this.search_product===null){
+                  return this.products.products
+              }
+              else {
+                  return this.products.products.filter((item => {
+                      return item.product_name.toLowerCase().match(this.search_product.toLowerCase())
+                  }))
+              }
           }
-          else {
-              return this.products.products.filter((item => {
-                  return item.product_name.toLowerCase().match(this.search_product.toLowerCase())
-              }))
-          }
-      }
     }
 }
 </script>

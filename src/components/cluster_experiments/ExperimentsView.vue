@@ -126,6 +126,10 @@
                 }]
             }),
             methods:{
+                /**
+                 * Show part of experiment dialog with meta data.
+                 * @param value
+                 */
                 onExperimentClicked (value) {
                         this.experiment = value
                         console.log(value)
@@ -133,46 +137,67 @@
                         EventBus.$emit('RELOAD_EXPERIMENT', this.category)
                         this.dialog = true
                 },
+                /**
+                 * Get experiment list from API
+                 * @returns {Promise<void>}
+                 */
                 async getExperiments () {
-                        const response = await Experiment_service.get_experiments()
+                    try{
+                        // perform request
+                        const response = await Experiment_service.get_experiments(this.$store.state.jwt)
                         this.experiments = response.data
-
+                    } catch (error) {
+                    if (error.response){
+                      if(error.response.status === 401){
+                        EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                      }
+                    }
+                  }
                 },
+                /**
+                 * Perform removal of experiment on API.
+                 * @returns {Promise<void>}
+                 */
                 async onDeleteExperimentClicked () {
-                        const req = {
-                                experiment_id:this.experiment._id
-                        }
+                    // object to be sent to API
+                    const req = {
+                        experiment_id:this.experiment._id
+                    }
 
-                        try {
-                            const response = await Experiment_service.delete_experiment(req)
-                            this.experiments = null
-                            this.experiments = response.data
-                            this.dialog = false
-                        }
-                        catch (error) {
-                            if (error.response){
-                                // other then 2xx
+                    try {
+                        // perform requests
+                        const response = await Experiment_service.delete_experiment(req, this.$store.state.jwt)
+                        // set up data
+                        this.experiments = null
+                        this.experiments = response.data
+                        // close dialog
+                        this.dialog = false
+                    }
+                    catch (error) {
+                        // error handler
+                        if (error.response){
+                            // unauthorized
+                            if(error.response.status === 401){
+                              EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                            }
+                            else{
+                                // err show dialog
                                 this.alert_text = error.response.data.error
                                 this.alert_code = error.response.data.error_code
                                 this.alert = true
-                                console.log(error.response.data)
-                                console.log(error.response.status)
-                                console.log(error.response.headers)
-                            }
-                            else if (error.request) {
-                                //timeout
-                                console.log(error.request);
-                            } else {
-                                // Something happened in setting up the request and triggered an Error
-                                console.log('Error', error.message);
                             }
                         }
+                        else {
+                            // Something happened in setting up the request and triggered an Error
+                            console.log('Error', error.message);
+                        }
+                    }
                 }
             },
             beforeMount() {
+            // reload experiments from store or perform api request
             if (this.$store.state.experiments[0]) {
                 this.product = this.$store.state.experiments
-                console.log('store')
             }
             else {
                 this.getExperiments()

@@ -44,6 +44,19 @@
     <v-content>
       <router-view/>
     </v-content>
+        <v-dialog
+          v-model="alert"
+          max-width="300"
+        >
+           <v-card>
+             <v-card-title class="red white--text headline">
+              API Error - {{alert_code}}
+            </v-card-title>
+             <v-card-text>
+                 <h3>{{alert_text}}</h3>
+             </v-card-text>
+           </v-card>
+        </v-dialog>
     <v-footer app>
       <v-layout>
         <span>
@@ -89,13 +102,18 @@ export default {
       ],
       title: 'Review Analysis',
       indexes_table: {},
-      user_id: 'user: not logged'
+      user_id: 'user: not logged',
+      alert: false,
+      alert_text: '',
+      alert_code: 200,
     }
   },
   methods: {
+   /**
+    * Handle for user an event USER_LOGGED.
+    * @param user
+    */
     userLogged(user){
-      console.log('Using user')
-      console.log(user)
       if (user.level === 'user'){
         this.items = this.items_user
         this.user_id = 'user: ' + user.name
@@ -105,16 +123,37 @@ export default {
         this.user_id = 'user: ' + user.name
       }
     },
+    /**
+     * Route to path.
+     * @param path
+     */
     drawerClick (path) {
       // eslint-disable-next-line no-unused-vars
       this.$router.push({name: path}).catch(err => {})
     },
-    loggedOut(){
+   /**
+    * Logout handle for an event USER_LOGGED_OUT.
+    * @param data
+    */
+    loggedOut(data){
+      if(data!==null){
+        this.alert_text = data.error
+        this.alert_code = data.error_code
+        this.alert = true
+      }
       this.user_id = 'user: not logged'
       this.items = this.items_not_logged
+      this.$store.commit('REM_USER_DATA')
+      this.$store.commit('REM_JWT_TOKEN')
+      if (this.$route.path !== '/') {
+          this.$router.push({name: 'not_logged_home'})
+      }
     }
   },
-  beforeMount () {
+    beforeMount () {
+    /**
+     * Get user.
+     */
     var user = this.$store.state.user
     if (user) {
       this.userLogged(user)
@@ -124,7 +163,7 @@ export default {
     }
     EventBus.$on('USER_LOGGED', this.userLogged)
     EventBus.$on('USER_LOGGED_OUT', this.loggedOut)
-  }
+    }
 }
 </script>
 <style>

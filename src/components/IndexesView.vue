@@ -16,6 +16,7 @@
 
 <script>
 import DataService from '../services/DataService'
+import EventBus from "../services/events";
 export default {
   data () {
     return {
@@ -30,13 +31,20 @@ export default {
     }
   },
   methods: {
+    /**
+     * Get index health status.
+     * @returns {Promise<void>}
+     */
     async loadMenuItems () {
       try {
-        const response = await DataService.get_indexes_health()
+        // send request and display data
+        const response = await DataService.get_indexes_health(this.$store.state.jwt)
         this.indexes = response.data
       } catch (error) {
-        if (error.response) {
-          console.log(error.response)
+        if (error.response){
+          if(error.response.status === 401){
+            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+          }
         }
       }
     }

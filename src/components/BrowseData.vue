@@ -25,6 +25,7 @@
 
 <script>
 import DataService from '../services/DataService'
+import EventBus from "../services/events";
 
 export default {
   data: () => ({
@@ -40,13 +41,15 @@ export default {
     },
     async loadBreadCrumbs () {
       try {
-        const response = await DataService.get_breadcrumbs()
+        const response = await DataService.get_breadcrumbs(this.$store.state.jwt)
         this.breadcrumbs = response.data
         this.$store.commit('SET_BREADCRUMBS', response.data)
         console.log('done')
       } catch (error) {
         if (error.response) {
-          console.log(error.response)
+          if(error.response.status === 401){
+                EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+              }
         }
       }
     },

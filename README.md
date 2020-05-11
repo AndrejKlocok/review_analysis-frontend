@@ -1,5 +1,5 @@
-# front_end
-
+# Review analysis front end
+This project  serves as front end application to [Review analysis](https://github.com/AndrejKlocok/review_analysis) project.
 ## Project setup
 ```
 npm install

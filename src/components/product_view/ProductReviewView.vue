@@ -41,7 +41,7 @@
           <v-card>
             <v-card-title class="headline">
                 Review for '{{review.product_name}}'
-                <v-icon @click="onHelpReveiwClicked()">
+                <v-icon @click="onHelpReviewClicked()">
                 info
                 </v-icon>
             </v-card-title>
@@ -387,7 +387,6 @@
                <v-card-text>
                    Review is empty, it can be caused by filter model, which filtered out all irrelevant sentences
                    and thus review is empty. Pick another one please.
-
                </v-card-text>
            </v-card>
         </v-dialog>
@@ -411,6 +410,7 @@
     import ProductBrowse from "./ProductBrowse"
     import ProductService from "../../services/ProductService"
     import Experiment_service from "../../services/Experiment_service";
+    import EventBus from "../../services/events";
 
     export default {
         components: {ProductBrowse},
@@ -469,48 +469,75 @@
             }
           },
         methods:{
+            /**
+             * Retrieve product reviews from back end with meta data about evaluation of text.
+             * @returns {Promise<void>}
+             */
             async getProductReviews (){
+                // if product is selected
                 if (this.product){
+                    // set up object, that will be sent over to API
                     const config = {
                         domain: this.product.domain
                     }
+                    // domain shop, the name of shop is indexed as name
                     if (this.product.domain ==='shop'){
                         config.name = this.product.name
                     }
+                    // the name of product is indexed as product_name
                     else {
                           config.name = this.product.product_name
                     }
-                    const response = await ProductService.get_reviews_by_product_name(config)
-                    const revs = response.data
-                    for (var i = 0; i < revs.length; i++) {
-                        var processed = false
-                        if(revs[i].pos_model || revs[i].con_model) {
-                            processed = true
+                    try {
+                        // send request
+                        const response = await ProductService.get_reviews_by_product_name(config, this.$store.state.jwt)
+                        const revs = response.data
+                        // for each review add items meta data object as follows
+                        for (var i = 0; i < revs.length; i++) {
+                            var processed = false
+                            if (revs[i].pos_model || revs[i].con_model) {
+                                processed = true
+                            }
+                            revs[i].items = {
+                                pros_label: revs[i].pros.length > 0,
+                                cons_label: revs[i].cons.length > 0,
+                                sum_label: revs[i].summary.length > 0,
+                                rat_diff_label: revs[i].rating_diff,
+                                filter_model: revs[i].filter_model,
+                                data_processed: processed
+                            }
                         }
-                        revs[i].items = {
-                            pros_label: revs[i].pros.length > 0,
-                            cons_label: revs[i].cons.length > 0,
-                            sum_label: revs[i].summary.length > 0,
-                            rat_diff_label: revs[i].rating_diff,
-                            filter_model: revs[i].filter_model,
-                            data_processed: processed
+                        this.reviews = revs
+                    }catch (error) {
+                        if (error.response){
+                          // other then 2xx
+                          if(error.response.status === 401){
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                          }
                         }
-                    }
-                    console.log(revs)
-                    this.reviews = revs
+                      }
                 }
             },
+            /**
+             * Show review details and perform analysis on backend site, which can take a time so the new dialog
+             * shows about evaluation information.
+             * @param review review object
+             * @returns {Promise<void>}
+             */
             async getReviewExperiment (review){
-              const data = {
+                // object that will be sent over to API
+                const data = {
                     _id: review._id,
                     category: review.category,
                 }
+                // changes for shop domain
                 if (this.product.domain === 'shop') {
                     data.category = review.shop_name
                 }
                 try {
-                    const response = await Experiment_service.check_review(data)
-                    console.log(response.data)
+                    // send request to API
+                    const response = await Experiment_service.check_review(data, this.$store.state.jwt)
+                    // close loading dialog and set up data
                     this.loading_data = false
                     this.pros_experiment = response.data.pos_labels
                     this.cons_experiment = response.data.con_labels
@@ -523,13 +550,18 @@
                     this.rating_diff = this.rating_diff_int.toFixed(0)+'%'
                     this.dialog=true
                 } catch (error) {
+                    // error handle
                     this.loading_data = false
                     if (error.response){
-
                         // 404 is empty review
                         if (error.response.data.error_code === 404) {
                             this.empty_review = true
                         }
+                        // unauthorized
+                        else if(error.response.status === 401){
+                            EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                        }
+                        // API error
                         else {
                             this.alert_text = error.response.data.error
                             this.alert_code = error.response.data.error_code
@@ -539,13 +571,24 @@
                     }
                 }
             },
+            /**
+             * Show help dialog for review table.
+             */
             onHelpClicked () {
                 this.help_review_table = true
             },
-            onHelpReveiwClicked () {
+            /**
+             * Show help dialog for review detail.
+             */
+            onHelpReviewClicked () {
                 this.help_review = true
             },
+            /**
+             * Handle for onClick on review item in products review table shows review detail dialog after loading data.
+             * @param review
+             */
             onReviewClicked (review) {
+                // setup review object and clear other
                 this.review = review
                 this.pros_experiment = []
                 this.cons_experiment = []
@@ -557,8 +600,13 @@
                 this.con_model = []
                 this.getReviewExperiment(review)
                 this.loading_data = true
-                console.log(review)
             },
+            /**
+             * Shows closer look on sentence analysis by all bipolar models.
+             * @param type type of sentence pos/con
+             * @param index index of sentence in review pos or con array
+             * @param item  analysed sentence
+             */
             onPosConClicked (type, index, item){
              if (type==='pos'){
                  this.pos_con_data.sentences = this.pos_model[index]
@@ -569,23 +617,24 @@
              this.pos_con_data.sentence = item.sentence
              this.pos_con_data.type = type
 
-             console.log(this.pos_con_data)
              this.pos_con = true
             },
         },
         beforeMount() {
+            // load product information from route
             if (this.$route.params.product) {
                 this.product = this.$route.params.product
-                console.log('route')
             }
+            // use store
             else if (this.$store.state.clicked_product ) {
                 this.product = this.$store.state.clicked_product
-                console.log('store')
             }
+            // otherwise return to product view
             else {
                 this.$router.push({name: 'product_view'})
                 return
             }
+            // request for product reviews
             this.getProductReviews()
         }
     }

@@ -55,6 +55,7 @@
 <script>
 import DataService from "../../services/DataService";
 import {GChart} from "vue-google-charts";
+import EventBus from "../../services/events";
 
 export default {
     components: {GChart},
@@ -103,19 +104,26 @@ export default {
 
   }),
   methods: {
+      /**
+       * Handle on category click event, get statistics for domain category.
+       * @param category name of domain category
+       */
       onCategoryClicked (category){
-          console.log(category)
           this.selected_category = category
           this.getCategoryStatistics(category)
       },
+      /**
+       * Get data for graphs of category, which shows new reviews/products in time.
+       * @param category name of domain category
+       * @returns {Promise<void>}
+       */
       async getCategoryStatistics(category){
-
         const config = {
             category: category
         }
         try {
-            const response = await DataService.category_statistics(config)
-            console.log(response.data)
+            const response = await DataService.category_statistics(config, this.$store.state.jwt)
+            // parse dataa to 2dim array for google charts
             var chart_data = [['Time', 'review count']]
             response.data.review_count.forEach(function (item) {
                 chart_data.push([item[0], item[1]])
@@ -142,14 +150,17 @@ export default {
 
         }
         catch (error) {
+            // error handle
             if (error.response){
                 // other then 2xx
-                this.alert_text = error.response.data.error
-                this.alert_code = error.response.data.error_code
-                this.alert = true
-                console.log(error.response.data)
-                console.log(error.response.status)
-                console.log(error.response.headers)
+                if(error.response.status === 401) {
+                    EventBus.$emit('USER_LOGGED_OUT', error.response.data)
+                }
+                else{
+                    this.alert_text = error.response.data.error
+                    this.alert_code = error.response.data.error_code
+                    this.alert = true
+                }
             }
             else if (error.request) {
                 //timeout
@@ -160,9 +171,9 @@ export default {
             }
         }
       },
-
   },
   beforeMount () {
+        // default are statistics for all domains combined
         this.onCategoryClicked('All product domains')
   },
     computed: {

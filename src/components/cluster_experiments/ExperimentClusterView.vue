@@ -146,10 +146,16 @@
             ],
         }),
         methods: {
+            /**
+             * Show sentences in dialog after after clicking on topic.
+             * @param cluster cluster object
+             * @param topic topic object
+             */
             onTopicClicked (cluster, topic) {
                 this.cluster_topic_name = topic.name
                 this.cluster_edit_data = cluster
                 const sentences = []
+                // parse sentences for topic
                 cluster.sentences.forEach(function (item) {
                     if (item.topic_id === topic._id) {
                          sentences.push(item)
@@ -159,6 +165,10 @@
                 this.cluster_items_per_page = sentences.length
                 this.sentence_dialog = true
             },
+            /**
+             * Show all cluster sentences in dialog.
+             * @param cluster
+             */
             onClusterClicked(cluster) {
                 this.cluster_topic_name = ''
                 this.cluster_edit_data = cluster
