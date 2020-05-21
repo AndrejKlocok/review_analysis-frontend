@@ -9,9 +9,9 @@
             <v-card-title class="indigo white--text headline">
                 Logout
             </v-card-title>
-            <div>
-                insert Sad face image
-            </div>
+            <v-card-text>
+                You are about to logout from review analysis system.
+            </v-card-text>
            <v-btn
             dark
             class="cyan"

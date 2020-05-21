@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-//const ax = axios.create({baseURL: `http://localhost:8081/experiment`})
+//const ax = axios.create({baseURL: `http://localhost:42024/experiment`})
 const ax = axios.create({baseURL: `http://pcknot5.fit.vutbr.cz:42024/experiment`})
 
 export default {
