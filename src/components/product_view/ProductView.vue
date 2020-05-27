@@ -1,5 +1,10 @@
 <template>
     <v-container fluid>
+        <section class="hero is-primary">
+        <v-card
+            class="mx-auto"
+            max-width="1200"
+            >
         <ProductBrowse></ProductBrowse>
         <v-card class="d-inline-block mx-auto">
             <v-container>
@@ -152,6 +157,8 @@
              :options="chartOptions"
          />
         <ExperimentClusterView v-bind:experiment="experiment" />
+    </v-card>
+    </section>
     </v-container>
 </template>
 

@@ -5,7 +5,7 @@ This project  serves as front end application to [Review analysis](https://githu
 npm install
 ```
 
-### Compiles and hot-reloads for development
+### Compiles and hot-reloads for development 
 ```
 npm run serve
 ```

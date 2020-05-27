@@ -1,7 +1,13 @@
 <template>
     <v-container fluid>
+        <section class="hero is-primary">
+        <v-card
+        class="mx-auto"
+        max-width="1200"
+        >
         <ProductBrowse></ProductBrowse>
-        <v-card>
+        <v-card
+            class="space">
             <v-card-title class="headline">
                 <span v-if="product.domain === 'shop'">Reviews for '{{product.name}}'</span>
                 <span v-else>Reviews for '{{product. product_name}}'</span>
@@ -182,19 +188,19 @@
                       </v-col>
                   </v-row>
                 <v-row>
-                          <v-card>
-                              <v-card-title>
-                                Author`s summary
-                            </v-card-title>
+                  <v-card class="space">
+                      <v-card-title>
+                        Author`s summary
+                    </v-card-title>
 
-                              <div align="left"
-                                  v-for="(sum_d, i) in summary_experiment"
-                                  :key="i">
-                                <span v-if="sum_d.label==='0'" v-html="sum_d.sentence" class="pos_sentence"></span>
-                                <span v-else v-html="sum_d.sentence" class="neg_sentence"></span>
+                      <div align="left"
+                          v-for="(sum_d, i) in summary_experiment"
+                          :key="i">
+                        <span v-if="sum_d.label==='0'" v-html="sum_d.sentence" class="pos_sentence"></span>
+                        <span v-else v-html="sum_d.sentence" class="neg_sentence"></span>
 
-                              </div>
-                          </v-card>
+                      </div>
+                  </v-card>
                       </v-row>
                 </v-container>
             </v-card>
@@ -403,6 +409,8 @@
              </v-card-text>
            </v-card>
         </v-dialog>
+    </v-card>
+    </section>
     </v-container>
 </template>
 
@@ -649,5 +657,8 @@
     #text-decoration: underline;
     #text-decoration-color:red;
     background-color: #f26166;
+}
+.space {
+    margin: 10px;
 }
 </style>

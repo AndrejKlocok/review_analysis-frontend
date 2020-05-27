@@ -1,5 +1,10 @@
 <template>
 <v-container fluid>
+    <section class="hero is-primary">
+        <v-card
+            class="mx-auto"
+            max-width="1200"
+            >
         <ExperimentsBrowse></ExperimentsBrowse>
         <h1>Experiment list</h1>
         <v-data-table
@@ -89,6 +94,8 @@
              </v-card-text>
            </v-card>
         </v-dialog>
+     </v-card>
+</section>
 </v-container>
 </template>
 
@@ -208,5 +215,7 @@
 </script>
 
 <style scoped>
-
+.space {
+    margin: 10px;
+}
 </style>

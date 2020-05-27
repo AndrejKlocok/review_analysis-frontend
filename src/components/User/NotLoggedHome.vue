@@ -1,6 +1,5 @@
 <template>
     <v-container fluid>
-
         <section class="hero is-primary">
           <v-card
             class="mx-auto"

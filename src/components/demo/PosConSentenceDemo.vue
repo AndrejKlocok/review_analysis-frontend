@@ -3,15 +3,16 @@
         <demo-browse/>
         <h1>Positive/Negative sentences</h1>
         <v-card
-            class="mx-auto"
+            class="mx-auto space"
             max-height="800"
-            width="300"
+            width="400"
             tile>
             <v-card-title class="indigo white--text headline">
                 Write a sentence
             </v-card-title>
             <v-form
                 ref="form"
+                class="space"
                 v-model="valid"
                 lazy-validation
                 >
@@ -35,7 +36,7 @@
             </h2>
             <v-btn
                 dark
-                class="cyan"
+                class="cyan space"
                 :disabled="!valid"
                 @click="onCheckSentence">
                 Check Polarity
@@ -126,5 +127,7 @@
 </script>
 
 <style scoped>
-
+.space {
+    margin: 10px;
+}
 </style>

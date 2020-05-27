@@ -1,5 +1,10 @@
 <template>
     <v-container fluid>
+    <section class="hero is-primary">
+    <v-card
+        class="mx-auto"
+        max-width="1200"
+        >
     <ProductBrowse></ProductBrowse>
     <h2>Product tree view</h2>
       <v-card
@@ -100,7 +105,7 @@
                         </v-text-field>
                     </v-sheet>
                     <v-list subheader>
-                      <v-subheader>Products </v-subheader>
+                      <v-subheader>Products (with at least 10 reviews) </v-subheader>
 
                       <v-list-item two-line
                         v-for="item in products_filtered"
@@ -146,6 +151,29 @@
              </v-card-text>
            </v-card>
         </v-dialog>
+        <v-dialog
+          v-model="loading_data"
+          max-width="600"
+            >
+           <v-card>
+             <v-card-title class="blue white--text headline">
+              Retrieving data
+            </v-card-title>
+               <v-progress-circular
+              :size="70"
+              :width="7"
+              color="purple"
+              indeterminate
+            ></v-progress-circular>
+               <v-card-text>
+                   <div>
+                        Loading products and its statistics from category/shop: {{category}}
+                   </div>
+               </v-card-text>
+           </v-card>
+        </v-dialog>
+    </v-card>
+    </section>
   </v-container>
 </template>
 
@@ -163,6 +191,7 @@ export default {
     search: null,
     search_product: '',
     caseSensitive: false,
+    category: '',
     active: [],
     products: {
         products: []
@@ -181,6 +210,7 @@ export default {
     cluster_experiment: null,
     experiment_sentences: null,
     cluster_dialog: false,
+    loading_data: false,
     alert:false,
     alert_text: '',
     alert_code: 200,
@@ -219,11 +249,15 @@ export default {
        * @returns {Promise<void>}
        */
       async loadProducts (category) {
+        this.category = category
+        this.loading_data = true
         try {
             // perform request on backend site
             const response =  await ProductService.get_products(category, this.$store.state.jwt)
             this.products = response.data
+            this.loading_data = false
         } catch (error) {
+            this.loading_data = false
             // error handle
             if (error.response){
                 if(error.response.status === 401){

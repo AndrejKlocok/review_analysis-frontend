@@ -1,5 +1,10 @@
 <template>
     <v-container fluid>
+        <section class="hero is-primary">
+        <v-card
+            class="mx-auto"
+            max-width="1200"
+            >
         <v-col>
             <ExperimentsBrowse></ExperimentsBrowse>
             <h1>Cluster simillar sentences</h1>
@@ -183,32 +188,12 @@
            </v-card>
         </v-dialog>
         <v-dialog
-          v-model="cluster_dialog"
-          max-width="800"
-          class="ml-4 scroll-y"
-          style="overflow-y: auto;max-height: 700px"
-        >
-            <v-card-title class="blue white--text headline">
-              Sentences view
-            </v-card-title>
-           <v-col>
-               <v-data-table
-                 :items-per-page="cluster_items_per_page"
-                 :headers="cluster_headers"
-                 :items="cluster_dialog_data.sentences"
-                 class="elevation-1"
-                >
-           </v-data-table>
-           </v-col>
-        </v-dialog>
-        <v-dialog
           v-model="cluster_dialog_menu"
-          max-width="400"
-          class="mx-4"
-          style="overflow-y: unset"
+          max-width="400px"
+          class="card_view"
         >
         <v-card
-        style="overflow-y: unset"
+            class="card_view"
             >
             <v-card-title class="blue white--text headline">
               Cluster menu
@@ -220,6 +205,7 @@
                 <v-form
                 ref="form"
                 v-model="valid"
+                class="space"
                 lazy-validation
                 >
 
@@ -266,6 +252,7 @@
                      <v-text-field
                       v-model="topics_per_cluster_select"
                       type="number"
+                      style="max-width: 100px;"
                       label="Topics per cluster"
                       :rules="[ topics_per_cluster_rules ]"
                     />
@@ -292,6 +279,25 @@
                 </v-row>
             </v-flex>
         </v-card>
+        </v-dialog>
+        <v-dialog
+          v-model="cluster_dialog"
+          max-width="800"
+          class="ml-4 scroll-y"
+          style="overflow-y: auto;max-height: 700px"
+        >
+            <v-card-title class="blue white--text headline">
+              Sentences view
+            </v-card-title>
+           <v-col>
+               <v-data-table
+                 :items-per-page="cluster_items_per_page"
+                 :headers="cluster_headers"
+                 :items="cluster_dialog_data.sentences"
+                 class="elevation-1"
+                >
+           </v-data-table>
+           </v-col>
         </v-dialog>
         <v-dialog
           v-model="peek_sentences_alert"
@@ -370,6 +376,29 @@
               </v-simple-table>
            </v-card>
         </v-dialog>
+        <v-dialog
+          v-model="loading_products"
+          max-width="600"
+            >
+           <v-card>
+             <v-card-title class="blue white--text headline">
+              Retrieving data
+            </v-card-title>
+               <v-progress-circular
+              :size="70"
+              :width="7"
+              color="purple"
+              indeterminate
+            ></v-progress-circular>
+               <v-card-text>
+                   <div>
+                        Loading products and its statistics from category/shop: {{cluster_category}}
+                   </div>
+               </v-card-text>
+           </v-card>
+        </v-dialog>
+    </v-card>
+    </section>
     </v-container>
 </template>
 
@@ -450,6 +479,7 @@
             ],
             peek_sentences_alert: false,
             loading_data: false,
+            loading_products: false,
             peek_pos_cnt: 0,
             peek_con_cnt: 0,
         }),
@@ -508,9 +538,12 @@
              */
             async loadProducts (category) {
                 try{
+                    this.loading_products = true
                     const response =  await ProductService.get_products(category, this.$store.state.jwt)
                     this.products = response.data
+                    this.loading_products = false
                 } catch (error) {
+                    this.loading_products = false
                     if (error.response){
                         // other then 2xx
                         if(error.response.status === 401){
@@ -700,5 +733,16 @@
 }
 .v-select.v-input--is-dirty input {
   display: none;
+}
+.space {
+  margin: 10px;
+}
+.card_view {
+    overflow-y: unset !important;
+}
+html {
+  overflow: hidden !important;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 </style>

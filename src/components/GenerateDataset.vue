@@ -1,129 +1,137 @@
 <template>
   <v-container fluid>
-      <h2>Generate Dataset</h2>
-  <v-card
-    class="mx-auto"
-    tile>
-      <v-row>
-          <v-col>
-              <v-treeview
-                v-model="categories"
-                dense
-                :items="breadcrumbs"
-                activatable
-                item-key="name"
-                open-on-click
-                selectable
-                class="ml-4 scroll-y"
-                style="overflow-y: auto;max-height: 600px"
-              >
-              </v-treeview>
-        </v-col>
-        <v-divider vertical></v-divider>
-        <v-col>
-            <v-row>
-                <template v-if="!categories.length">
-              No categories selected.
-            </template>
-            <template v-else>
-              Selected {{categories.length}} categories
-            </template>
-            </v-row>
-            <v-row>
-                <v-form
-                    ref="form"
-                    v-model="valid"
-                    lazy-validation
-                  >
-                   <v-select
-                      v-model="task_type_select"
-                      :items="task_type_items"
-                      :rules="[v => !!v || 'Item is required']"
-                      label="Type of task"
-                      required
+      <section class="hero is-primary">
+      <v-card
+        class="mx-auto"
+        max-width="1200"
+      >
+          <h2>Generate Dataset</h2>
+          <v-card
+            class="mx-auto"
+            tile>
+              <v-row>
+                  <v-col>
+                      <v-treeview
+                        v-model="categories"
+                        dense
+                        :items="breadcrumbs"
+                        activatable
+                        item-key="name"
+                        open-on-click
+                        selectable
+                        class="ml-4 scroll-y"
+                        style="overflow-y: auto;max-height: 600px"
+                      >
+                      </v-treeview>
+                </v-col>
+                <v-divider vertical></v-divider>
+                <v-col class="space">
+                    <v-row>
+                        <template v-if="!categories.length">
+                      No categories selected.
+                    </template>
+                    <template v-else>
+                      Selected {{categories.length}} categories
+                    </template>
+                    </v-row>
+                    <v-row>
+                        <v-form
+                            ref="form"
+                            class="space"
+                            v-model="valid"
+                            lazy-validation
+                          >
+                           <v-select
+                              v-model="task_type_select"
+                              :items="task_type_items"
+                              :rules="[v => !!v || 'Item is required']"
+                              label="Type of task"
+                              required
 
-                    ></v-select>
-                    <v-select
-                      v-model="model_type_select"
-                      :items="model_type_items"
-                      :rules="[v => !!v || 'Item is required']"
-                      label="model type"
-                      required
-                    ></v-select>
-                    <v-select
-                      v-model="sentence_type_select"
-                      :items="sentence_type_items"
-                      :rules="[v => !!v || 'Item is required']"
-                      label="sentence type"
-                      required
-                    ></v-select>
-                    <v-checkbox
-                      v-model="equal_checkbox"
-                      label="Equal dataset"
-                    ></v-checkbox>
-                    <v-text-field
-                      v-model="min_sentence_len"
-                      type="number"
-                      label="Min sentence length"
-                      :rules="[ min_sentence_rules ]"
-                    />
-                    <v-text-field
-                      v-model="max_sentence_len"
-                      type="number"
-                      label="Max sentence length"
-                      :rules="[ max_sentence_rules ]"
-                    />
-                </v-form>
-            </v-row>
-            <v-row>
-              <v-btn
-                dark
-                class="cyan"
-                :disabled="!valid"
-                @click="onGenerateDatasetClicked">
-                Generate
-              </v-btn>
-            </v-row>
+                            ></v-select>
+                            <v-select
+                              v-model="model_type_select"
+                              :items="model_type_items"
+                              :rules="[v => !!v || 'Item is required']"
+                              label="model type"
+                              required
+                            ></v-select>
+                            <v-select
+                              v-model="sentence_type_select"
+                              :items="sentence_type_items"
+                              :rules="[v => !!v || 'Item is required']"
+                              label="sentence type"
+                              required
+                            ></v-select>
+                            <v-checkbox
+                              v-model="equal_checkbox"
+                              label="Equal dataset"
+                            ></v-checkbox>
+                            <v-text-field
+                              v-model="min_sentence_len"
+                              type="number"
+                              label="Min sentence length"
+                              :rules="[ min_sentence_rules ]"
+                            />
+                            <v-text-field
+                              v-model="max_sentence_len"
+                              type="number"
+                              label="Max sentence length"
+                              :rules="[ max_sentence_rules ]"
+                            />
+                        </v-form>
+                    </v-row>
+                    <v-row>
+                      <v-btn
+                        dark
+                        class="cyan space"
+                        :disabled="!valid"
+                        @click="onGenerateDatasetClicked">
+                        Generate
+                      </v-btn>
+                    </v-row>
 
-        </v-col>
-      </v-row>
-  </v-card>
-      <v-dialog
-          v-model="alert"
-          max-width="300"
-        >
-           <v-card>
-             <v-card-title class="red white--text headline">
-              API Error - {{alert_code}}
-            </v-card-title>
-             <v-card-text>
-                 <h3>{{alert_text}}</h3>
-             </v-card-text>
-           </v-card>
-        </v-dialog>
-      <v-dialog
-          v-model="loading_data"
-          max-width="600"
+                </v-col>
+              </v-row>
+          </v-card>
+          <v-dialog
+              v-model="alert"
+              max-width="300"
             >
-           <v-card>
-             <v-card-title class="blue white--text headline">
-              Generating dataset in progress
-            </v-card-title>
-               <v-progress-circular
-              :size="70"
-              :width="7"
-              color="purple"
-              indeterminate
-            ></v-progress-circular>
-               <v-card-text>
-                   <div>
-                       Dataset is being generated on backend side. Please wait a while.
-                        Bigger the dataset longer it takes to download the data.
-                       Generating dataset of: <b>{{categories.length}}</b> categories.
-                   </div>
-               </v-card-text>
-           </v-card>
-        </v-dialog>
+               <v-card>
+                 <v-card-title class="red white--text headline">
+                  API Error - {{alert_code}}
+                </v-card-title>
+                 <v-card-text>
+                     <h3>{{alert_text}}</h3>
+                 </v-card-text>
+               </v-card>
+            </v-dialog>
+          <v-dialog
+              v-model="loading_data"
+              max-width="600"
+                >
+               <v-card>
+                 <v-card-title class="blue white--text headline">
+                  Generating dataset in progress
+               </v-card-title>
+                   <v-progress-circular
+                  :size="70"
+                  :width="7"
+                  color="purple"
+                  indeterminate
+               ></v-progress-circular>
+                   <v-card-text>
+                       <div>
+                           Dataset is being generated on backend side. Please wait a while.
+                            Bigger the dataset longer it takes to download the data.
+                           Generating dataset of: <b>{{categories.length}}</b> categories.
+                       </div>
+                   </v-card-text>
+               </v-card>
+          </v-dialog>
+    </v-card>
+    </section>
   </v-container>
 </template>
 
@@ -290,3 +298,8 @@ export default {
     }
 }
 </script>
+<style scoped>
+    .space {
+        margin: 10px;
+    }
+</style>
