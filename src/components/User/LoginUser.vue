@@ -13,6 +13,7 @@
             </v-card-title>
             <v-form
                 ref="form"
+                class="space"
                 v-model="valid"
                 lazy-validation
                 >
@@ -142,5 +143,7 @@ export default {
 </script>
 
 <style scoped>
-
+.space {
+    margin: 10px;
+}
 </style>

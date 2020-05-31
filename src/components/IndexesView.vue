@@ -12,7 +12,7 @@
           :sort-by="['Index', 'Count of documents', 'Size']"
           :sort-desc="[false, true]"
           multi-sort
-          :items-per-page="20"
+          :items-per-page="30"
           :hide-default-footer="true"
           class="elevation-1"
         ></v-data-table>

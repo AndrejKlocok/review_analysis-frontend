@@ -14,7 +14,7 @@
             </v-card-text>
            <v-btn
             dark
-            class="cyan"
+            class="cyan space"
             @click="logout">
             logout
           </v-btn>
@@ -43,5 +43,7 @@ export default {
 </script>
 
 <style scoped>
-
+.space {
+    margin: 10px;
+}
 </style>

@@ -191,6 +191,7 @@
           v-model="cluster_dialog_menu"
           max-width="400px"
           class="card_view"
+          style="overflow-y: unset"
         >
         <v-card
             class="card_view"

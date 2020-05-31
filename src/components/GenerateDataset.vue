@@ -281,7 +281,9 @@ export default {
                 }
                 else {
                     // Something happened in setting up the request and triggered an Error
-                    console.log('Error', error.message);
+                    this.alert_text = error.message
+                    this.alert_code = 500
+                    this.alert = true
                 }
             }
         }
