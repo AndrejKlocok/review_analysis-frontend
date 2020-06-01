@@ -1,6 +1,5 @@
 import axios from 'axios'
 
-//const ax = axios.create({baseURL: `http://localhost:42024/generate`})
 const ax = axios.create({baseURL: `http://pcknot5.fit.vutbr.cz:42024/generate`})
 
 export default {
