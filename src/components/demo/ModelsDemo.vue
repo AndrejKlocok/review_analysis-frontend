@@ -1,5 +1,10 @@
 <template>
     <v-container fluid>
+        <section class="hero is-primary">
+        <v-card
+            class="mx-auto"
+            max-width="1200"
+        >
         <DemoBrowse/>
         <v-card
             class="mx-auto"
@@ -44,7 +49,9 @@
                     for classification of relevant sentences consists of SVM classifier with FSE embeddings used with it.
                 </v-card-text>
             </v-card>
-    </v-card>
+        </v-card>
+        </v-card>
+        </section>
     </v-container>
 </template>
 

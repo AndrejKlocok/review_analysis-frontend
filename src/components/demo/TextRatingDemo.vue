@@ -1,5 +1,10 @@
 <template>
     <v-container fluid>
+        <section class="hero is-primary">
+        <v-card
+            class="mx-auto"
+            max-width="1200"
+        >
         <demo-browse/>
         <h1>Text rating </h1>
         <v-card
@@ -46,6 +51,8 @@
              </v-card-text>
            </v-card>
         </v-dialog>
+        </v-card>
+        </section>
     </v-container>
 </template>
 
